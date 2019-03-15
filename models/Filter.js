@@ -1,4 +1,15 @@
-"use strict";
+// 'path' module
+const path = require('path');
+// Filter configuration
+const memberFilterConfig = require(path.join(__dirname, '../configurations/Filter.json'));
+// Tables configuration
+const memberTablesConfig = require(path.join(__dirname, '../configurations/Tables.json'));
+// 'Utils' model
+const Utils = require('./Utils.js');
+// PostgreSQL connection pool
+const {
+  Municipios, Estados, Paises, Biomas, Sequelize, sequelize, Op,
+} = require('../pg');
 
 /**
  * Filter model, which contains filter related database manipulations.
@@ -6,25 +17,14 @@
  *
  * @author Jean Souza [jean.souza@funcate.org.br]
  *
- * @property {object} memberPath - 'path' module.
+ * @property {object} path - 'path' module.
  * @property {json} memberFilterConfig - Filter configuration.
  * @property {json} memberTablesConfig - Tables configuration.
- * @property {object} memberUtils - 'Utils' model.
- * @property {object} memberPgPool - PostgreSQL connection pool.
+ * @property {object} utils - 'Utils' model.
+ * @property {object} pgSequelize - PostgreSQL connection pool.
  */
-var Filter = function() {
-
-  // 'path' module
-  var memberPath = require('path');
-  // Filter configuration
-  var memberFilterConfig = require(memberPath.join(__dirname, '../configurations/Filter.json'));
-  // Tables configuration
-  var memberTablesConfig = require(memberPath.join(__dirname, '../configurations/Tables.json'));
-  // 'Utils' model
-  var memberUtils = new (require('./Utils.js'))();
-  // PostgreSQL connection pool
-  var memberPgPool = require('../pg');
-
+function Filter() {
+  const utils = new Utils();
   /**
    * Returns a list of countries filtered by the received states ids.
    * @param {array} states - States ids
@@ -35,35 +35,17 @@ var Filter = function() {
    * @memberof Filter
    * @inner
    */
-  this.getCountriesByStates = function(states, callback) {
-    // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
-        var parameter = 1;
-        var params = [];
-
-        // Creation of the query
-        var query = "select a." + memberTablesConfig.Countries.IdFieldName + " as id, a." + memberTablesConfig.Countries.NameFieldName + " as name, a." +
-                    memberTablesConfig.Countries.BdqNameFieldName + " as bdq_name from " +
-                    memberTablesConfig.Countries.Schema + "." + memberTablesConfig.Countries.TableName + " a inner join " + memberTablesConfig.States.Schema + "." +
-                    memberTablesConfig.States.TableName + " b on (a." + memberTablesConfig.Countries.IdFieldName + " = b." + memberTablesConfig.Countries.IdFieldName +
-                    ") where b." + memberTablesConfig.States.IdFieldName + " in (";
-
-        for(var i = 0, statesLength = states.length; i < statesLength; i++) {
-          query += "$" + (parameter++) + ",";
-          params.push(states[i]);
-        }
-
-        query = query.substring(0, (query.length - 1)) + ");";
-
-        // Execution of the query
-        client.query(query, params, function(err, result) {
-          done();
-          if(!err) return callback(null, result);
-          else return callback(err);
-        });
-      } else return callback(err);
-    });
+  this.getCountriesByStates = function (states, callback) {
+    Paises.findAll({
+      include: [Estados],
+      where: {
+        id_1: {
+          [Op.in]: states,
+        },
+      },
+    }).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
@@ -75,21 +57,12 @@ var Filter = function() {
    * @memberof Filter
    * @inner
    */
-  this.getCountries = function(callback) {
-    // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
-        // Creation of the query
-        var query = "select " + memberTablesConfig.Countries.IdFieldName + " as id, " + memberTablesConfig.Countries.NameFieldName + " as name from " + memberTablesConfig.Countries.Schema + "." + memberTablesConfig.Countries.TableName + " order by " + memberTablesConfig.Countries.NameFieldName + " asc;";
-
-        // Execution of the query
-        client.query(query, function(err, result) {
-          done();
-          if(!err) return callback(null, result);
-          else return callback(err);
-        });
-      } else return callback(err);
-    });
+  this.getCountries = function (callback) {
+    Paises.findAll({
+      order: ['id_0', 'ASC'],
+    }).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
@@ -101,21 +74,12 @@ var Filter = function() {
    * @memberof Filter
    * @inner
    */
-  this.getBiomes = function(callback) {
-    // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
-        // Creation of the query
-        var query = "select " + memberTablesConfig.Biomes.IdFieldName + " as id, " + memberTablesConfig.Biomes.NameFieldName + " as name from " + memberTablesConfig.Biomes.Schema + "." + memberTablesConfig.Biomes.TableName + " order by " + memberTablesConfig.Biomes.NameFieldName + " asc;";
-
-        // Execution of the query
-        client.query(query, function(err, result) {
-          done();
-          if(!err) return callback(null, result);
-          else return callback(err);
-        });
-      } else return callback(err);
-    });
+  this.getBiomes = function (callback) {
+    Biomas.findAll({
+      order: ['nome', 'ASC'],
+    }).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
@@ -128,33 +92,20 @@ var Filter = function() {
    * @memberof Filter
    * @inner
    */
-  this.getStatesByCountries = function(countries, callback) {
-    // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
-        var parameter = 1;
-        var params = [];
-
-        // Creation of the query
-        var query = "select " + memberTablesConfig.States.IdFieldName + " as id, " + memberTablesConfig.States.NameFieldName + " as name from " +
-        memberTablesConfig.States.Schema + "." + memberTablesConfig.States.TableName +
-        " where " + memberTablesConfig.States.CountryIdFieldName + " in (";
-
-        for(var i = 0, countriesLength = countries.length; i < countriesLength; i++) {
-          query += "$" + (parameter++) + ",";
-          params.push(countries[i]);
-        }
-
-        query = query.substring(0, (query.length - 1)) + ") order by " + memberTablesConfig.States.CountryIdFieldName + " asc, " + memberTablesConfig.States.NameFieldName + " asc;";
-
-        // Execution of the query
-        client.query(query, params, function(err, result) {
-          done();
-          if(!err) return callback(null, result);
-          else return callback(err);
-        });
-      } else return callback(err);
-    });
+  this.getStatesByCountries = function (countries, callback) {
+    Estados.findAll({
+      where: {
+        id_0: {
+          [Op.in]: countries,
+        },
+      },
+      order: [
+        ['name_0', 'ASC'],
+        ['name_1', 'ASC'],
+      ],
+    }).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
@@ -167,65 +118,56 @@ var Filter = function() {
    * @memberof Filter
    * @inner
    */
-  this.getCountriesExtent = function(countries, callback) {
-    if(countries.length === 1 && memberFilterConfig.Extents.Countries[countries[0]] !== undefined) {
-      var confExtent = memberFilterConfig.Extents.Countries[countries[0]].split(',');
-      return callback(null, { rowCount: 1, rows: [{ extent: "BOX(" + confExtent[0] + " " + confExtent[1] + "," + confExtent[2] + " " + confExtent[3] + ")" }] });
+  this.getCountriesExtent = function (countries, callback) {
+    if (countries.length === 1 && memberFilterConfig.Extents.Countries[countries[0]] !== undefined) {
+      const confExtent = memberFilterConfig.Extents.Countries[countries[0]].split(',');
+      return callback(null, { rowCount: 1, rows: [{ extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})` }] });
     }
 
-    var countriesWithExtent = [];
-    var countriesWithoutExtent = [];
+    const countriesWithExtent = [];
+    const countriesWithoutExtent = [];
 
-    for(var i = 0, countriesLength = countries.length; i < countriesLength; i++) {
-      if(memberFilterConfig.Extents.Countries[countries[i]] !== undefined)
-        countriesWithExtent.push(countries[i]);
-      else
-        countriesWithoutExtent.push(countries[i]);
+    for (let i = 0, countriesLength = countries.length; i < countriesLength; i++) {
+      if (memberFilterConfig.Extents.Countries[countries[i]] !== undefined) countriesWithExtent.push(countries[i]);
+      else countriesWithoutExtent.push(countries[i]);
     }
 
-    var unionGeoms = "";
+    let unionGeoms = '';
 
-    if(countriesWithExtent.length > 0) {
-      for(var i = 0, countriesWithExtentLength = countriesWithExtent.length; i < countriesWithExtentLength; i++)
-        unionGeoms += "ST_MakeEnvelope(" + memberFilterConfig.Extents.Countries[countriesWithExtent[i]] + ", 4326), ";
+    if (countriesWithExtent.length > 0) {
+      for (let i = 0, countriesWithExtentLength = countriesWithExtent.length; i < countriesWithExtentLength; i++) unionGeoms += `ST_MakeEnvelope(${memberFilterConfig.Extents.Countries[countriesWithExtent[i]]}, 4326), `;
 
       unionGeoms = unionGeoms.substring(0, (unionGeoms.length - 2));
     }
 
-    // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
-        var parameter = 1;
-        var params = [];
+    let parameter = 1;
+    const params = [];
+    let query;
 
-        // Creation of the query
-        if(countriesWithoutExtent.length > 0) {
-          var query = "select ST_Expand(ST_Extent(";
+    // Creation of the query
+    if (countriesWithoutExtent.length > 0) {
+      query = 'select ST_Expand(ST_Extent(';
 
-          if(unionGeoms !== "")
-            query += "ST_Collect(ARRAY[" + memberTablesConfig.Countries.GeometryFieldName + ", " + unionGeoms + "])";
-          else
-            query += memberTablesConfig.Countries.GeometryFieldName;
+      if (unionGeoms !== '') query += `ST_Collect(ARRAY[${memberTablesConfig.Countries.GeometryFieldName}, ${unionGeoms}])`;
+      else query += memberTablesConfig.Countries.GeometryFieldName;
 
-          query += "), 2) as extent from " + memberTablesConfig.Countries.Schema + "." + memberTablesConfig.Countries.TableName + " where " + memberTablesConfig.Countries.IdFieldName + " in (";
+      query += `), 2) as extent from ${memberTablesConfig.Countries.Schema}.${memberTablesConfig.Countries.TableName} where ${memberTablesConfig.Countries.IdFieldName} in (`;
 
-          for(var i = 0, countriesWithoutExtentLength = countriesWithoutExtent.length; i < countriesWithoutExtentLength; i++) {
-            query += "$" + (parameter++) + ",";
-            params.push(countriesWithoutExtent[i]);
-          }
+      for (let i = 0, countriesWithoutExtentLength = countriesWithoutExtent.length; i < countriesWithoutExtentLength; i++) {
+        query += `$${parameter++},`;
+        params.push(countriesWithoutExtent[i]);
+      }
 
-          query = query.substring(0, (query.length - 1)) + ")";
-        } else
-          var query = "select ST_Expand(ST_Extent(ST_Collect(ARRAY[" + unionGeoms + "])), 2) as extent";
+      query = `${query.substring(0, (query.length - 1))})`;
+    } else query = `select ST_Expand(ST_Extent(ST_Collect(ARRAY[${unionGeoms}])), 2) as extent`;
 
-        // Execution of the query
-        client.query(query, params, function(err, result) {
-          done();
-          if(!err) return callback(null, result);
-          else return callback(err);
-        });
-      } else return callback(err);
-    });
+    console.log(query);
+
+    sequelize.query(
+      query, { bind: params, type: sequelize.QueryTypes.SELECT },
+    ).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
@@ -238,65 +180,54 @@ var Filter = function() {
    * @memberof Filter
    * @inner
    */
-  this.getStatesExtent = function(states, callback) {
-    if(states.length === 1 && memberFilterConfig.Extents.States[states[0]] !== undefined) {
-      var confExtent = memberFilterConfig.Extents.States[states[0]].split(',');
-      return callback(null, { rowCount: 1, rows: [{ extent: "BOX(" + confExtent[0] + " " + confExtent[1] + "," + confExtent[2] + " " + confExtent[3] + ")" }] });
+  this.getStatesExtent = function (states, callback) {
+    if (states.length === 1 && memberFilterConfig.Extents.States[states[0]] !== undefined) {
+      const confExtent = memberFilterConfig.Extents.States[states[0]].split(',');
+      return callback(null, { rowCount: 1, rows: [{ extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})` }] });
     }
 
-    var statesWithExtent = [];
-    var statesWithoutExtent = [];
+    const statesWithExtent = [];
+    const statesWithoutExtent = [];
 
-    for(var i = 0, statesLength = states.length; i < statesLength; i++) {
-      if(memberFilterConfig.Extents.States[states[i]] !== undefined)
-        statesWithExtent.push(states[i]);
-      else
-        statesWithoutExtent.push(states[i]);
+    for (let i = 0, statesLength = states.length; i < statesLength; i++) {
+      if (memberFilterConfig.Extents.States[states[i]] !== undefined) statesWithExtent.push(states[i]);
+      else statesWithoutExtent.push(states[i]);
     }
 
-    var unionGeoms = "";
+    let unionGeoms = '';
 
-    if(statesWithExtent.length > 0) {
-      for(var i = 0, statesWithExtentLength = statesWithExtent.length; i < statesWithExtentLength; i++)
-        unionGeoms += "ST_MakeEnvelope(" + memberFilterConfig.Extents.States[statesWithExtent[i]] + ", 4326), ";
+    if (statesWithExtent.length > 0) {
+      for (let i = 0, statesWithExtentLength = statesWithExtent.length; i < statesWithExtentLength; i++) unionGeoms += `ST_MakeEnvelope(${memberFilterConfig.Extents.States[statesWithExtent[i]]}, 4326), `;
 
       unionGeoms = unionGeoms.substring(0, (unionGeoms.length - 2));
     }
 
-    // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
-        var parameter = 1;
-        var params = [];
+    let parameter = 1;
+    const params = [];
+    let query;
 
-        // Creation of the query
-        if(statesWithoutExtent.length > 0) {
-          var query = "select ST_Expand(ST_Extent(";
+    // Creation of the query
+    if (statesWithoutExtent.length > 0) {
+      query = 'select ST_Expand(ST_Extent(';
 
-          if(unionGeoms !== "")
-            query += "ST_Collect(ARRAY[" + memberTablesConfig.States.GeometryFieldName + ", " + unionGeoms + "])";
-          else
-            query += memberTablesConfig.States.GeometryFieldName;
+      if (unionGeoms !== '') query += `ST_Collect(ARRAY[${memberTablesConfig.States.GeometryFieldName}, ${unionGeoms}])`;
+      else query += memberTablesConfig.States.GeometryFieldName;
 
-          query += "), 0.5) as extent from " + memberTablesConfig.States.Schema + "." + memberTablesConfig.States.TableName + " where " + memberTablesConfig.States.IdFieldName + " in (";
+      query += `), 0.5) as extent from ${memberTablesConfig.States.Schema}.${memberTablesConfig.States.TableName} where ${memberTablesConfig.States.IdFieldName} in (`;
 
-          for(var i = 0, statesWithoutExtentLength = statesWithoutExtent.length; i < statesWithoutExtentLength; i++) {
-            query += "$" + (parameter++) + ",";
-            params.push(statesWithoutExtent[i]);
-          }
+      for (let i = 0, statesWithoutExtentLength = statesWithoutExtent.length; i < statesWithoutExtentLength; i++) {
+        query += `$${parameter++},`;
+        params.push(statesWithoutExtent[i]);
+      }
 
-          query = query.substring(0, (query.length - 1)) + ")";
-        } else
-          var query = "select ST_Expand(ST_Extent(ST_Collect(ARRAY[" + unionGeoms + "])), 2) as extent";
+      query = `${query.substring(0, (query.length - 1))})`;
+    } else query = `select ST_Expand(ST_Extent(ST_Collect(ARRAY[${unionGeoms}])), 2) as extent`;
 
-        // Execution of the query
-        client.query(query, params, function(err, result) {
-          done();
-          if(!err) return callback(null, result);
-          else return callback(err);
-        });
-      } else return callback(err);
-    });
+    sequelize.query(
+      query, { bind: params, type: sequelize.QueryTypes.SELECT },
+    ).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
@@ -309,29 +240,36 @@ var Filter = function() {
    * @memberof Filter
    * @inner
    */
-  this.getProtectedAreaExtent = function(id, callback) {
-    if(memberFilterConfig.Extents.ProtectedAreas[id.toString()] !== undefined) {
-      var confExtent = memberFilterConfig.Extents.ProtectedAreas[id.toString()].split(',');
-      return callback(null, { rowCount: 1, rows: [{ extent: "BOX(" + confExtent[0] + " " + confExtent[1] + "," + confExtent[2] + " " + confExtent[3] + ")" }] });
+  this.getProtectedAreaExtent = function (id, callback) {
+    if (memberFilterConfig.Extents.ProtectedAreas[id.toString()] !== undefined) {
+      const confExtent = memberFilterConfig.Extents.ProtectedAreas[id.toString()].split(',');
+      return callback(null, { rowCount: 1, rows: [{ extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})` }] });
     }
 
-    var parameters = [id.toString()];
+    const params = [id.toString()];
 
+    const schemaAndTable = `${memberTablesConfig.UCF.Schema}.${memberTablesConfig.UCF.TableName}`;
+    const geom = memberTablesConfig.UCF.GeometryFieldName;
+    const idField = memberTablesConfig.UCF.IdFieldName;
+
+    // Creation of the query
+    const query = `select ST_Expand(ST_Extent(${geom}), 0.5) as extent from ${schemaAndTable} where ${idField} = $1;`;
+
+    sequelize.query(
+      query,
+      {
+        bind: params,
+        type: sequelize.QueryTypes.SELECT,
+      },
+    );
     // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
-        var schemaAndTable = memberTablesConfig.UCF.Schema + "." + memberTablesConfig.UCF.TableName;
-        var geom = memberTablesConfig.UCF.GeometryFieldName;
-        var idField = memberTablesConfig.UCF.IdFieldName;
-
-        // Creation of the query
-        var query = "select ST_Expand(ST_Extent(" + geom + "), 0.5) as extent from " + schemaAndTable + " where " + idField + " = $1;";
-
+    pgSequelize.connect((err, client, done) => {
+      if (!err) {
         // Execution of the query
-        client.query(query, parameters, function(err, result) {
+        client.query(query, params, (err, result) => {
           done();
-          if(!err) return callback(null, result);
-          else return callback(err);
+          if (!err) return callback(null, result);
+          return callback(err);
         });
       } else return callback(err);
     });
@@ -347,28 +285,22 @@ var Filter = function() {
    * @memberof Filter
    * @inner
    */
-  this.getCityExtent = function(id, callback) {
-    if(memberFilterConfig.Extents.Cities[id] !== undefined) {
-      var confExtent = memberFilterConfig.Extents.Cities[id].split(',');
-      return callback(null, { rowCount: 1, rows: [{ extent: "BOX(" + confExtent[0] + " " + confExtent[1] + "," + confExtent[2] + " " + confExtent[3] + ")" }] });
+  this.getCityExtent = function (id, callback) {
+    if (memberFilterConfig.Extents.Cities[id] !== undefined) {
+      const confExtent = memberFilterConfig.Extents.Cities[id].split(',');
+      return callback(null, { rowCount: 1, rows: [{ extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})` }] });
     }
 
-    var parameters = [id];
+    const params = [id];
 
-    // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
-        // Creation of the query
-        var query = "select ST_Expand(ST_Extent(" + memberTablesConfig.Cities.GeometryFieldName + "), 0.1) as extent from " + memberTablesConfig.Cities.Schema + "." + memberTablesConfig.Cities.TableName + " where " + memberTablesConfig.Cities.IdFieldName + " = $1;";
+    // Creation of the query
+    const query = `select ST_Expand(ST_Extent(${memberTablesConfig.Cities.GeometryFieldName}), 0.1) as extent from ${memberTablesConfig.Cities.Schema}.${memberTablesConfig.Cities.TableName} where ${memberTablesConfig.Cities.IdFieldName} = $1;`;
 
-        // Execution of the query
-        client.query(query, parameters, function(err, result) {
-          done();
-          if(!err) return callback(null, result);
-          else return callback(err);
-        });
-      } else return callback(err);
-    });
+    sequelize.query(
+      query, { bind: params, type: sequelize.QueryTypes.SELECT },
+    ).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
@@ -383,30 +315,22 @@ var Filter = function() {
    * @memberof Filter
    * @inner
    */
-  this.getDataByIntersection = function(longitude, latitude, resolution, callback) {
+  this.getDataByIntersection = function (longitude, latitude, resolution, callback) {
     // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
+    let key = 'States';
 
-        var key = "States";
+    if (resolution >= memberFilterConfig.SpatialFilter.Countries.MinResolution && resolution < memberFilterConfig.SpatialFilter.Countries.MaxResolution) key = 'Countries';
 
-        if(resolution >= memberFilterConfig.SpatialFilter.Countries.MinResolution && resolution < memberFilterConfig.SpatialFilter.Countries.MaxResolution)
-          key = "Countries";
+    // Creation of the query
+    const query = `SELECT ${memberTablesConfig[key].IdFieldName} as id, ${memberTablesConfig[key].NameFieldName} as name, '${key}' as key, ${memberTablesConfig[key].BdqNameFieldName} as bdq_name`
+        + ` FROM ${memberTablesConfig[key].Schema}.${memberTablesConfig[key].TableName} WHERE ST_Intersects(${memberTablesConfig[key].GeometryFieldName}, ST_SetSRID(ST_MakePoint($1, $2), 4326));`;
 
-        // Creation of the query
-        var query = "SELECT " + memberTablesConfig[key].IdFieldName + " as id, " + memberTablesConfig[key].NameFieldName + " as name, '" + key + "' as key, " + memberTablesConfig[key].BdqNameFieldName + " as bdq_name" +
-        " FROM " + memberTablesConfig[key].Schema + "." + memberTablesConfig[key].TableName + " WHERE ST_Intersects(" + memberTablesConfig[key].GeometryFieldName + ", ST_SetSRID(ST_MakePoint($1, $2), 4326));";
-
-        var params = [longitude, latitude];
-
-        // Execution of the query
-        client.query(query, params, function(err, result) {
-          done();
-          if(!err) return callback(null, result);
-          else return callback(err);
-        });
-      } else return callback(err);
-    });
+    const params = [longitude, latitude];
+    sequelize.query(
+      query, { bind: params, type: sequelize.QueryTypes.SELECT },
+    ).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
@@ -421,32 +345,24 @@ var Filter = function() {
    * @memberof Filter
    * @inner
    */
-  this.getSatellites = function(dateTimeFrom, dateTimeTo, options, callback) {
+  this.getSatellites = function (dateTimeFrom, dateTimeTo, options, callback) {
     // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
-        // Counter of the query parameters
-        var parameter = 1;
+    // Counter of the query parameters
+    let preParameter = 1;
 
-        // Creation of the query
-        var query = "select distinct " + memberTablesConfig.Fires.SatelliteFieldName + " from " + memberTablesConfig.Fires.Schema + "." + memberTablesConfig.Fires.TableName +
-            " where (" + memberTablesConfig.Fires.DateTimeFieldName + " between $" + (parameter++) + " and $" + (parameter++) + ")",
-            params = [dateTimeFrom, dateTimeTo];
+    // Creation of the query
+    const preQuery = `select distinct ${memberTablesConfig.Fires.SatelliteFieldName} from ${memberTablesConfig.Fires.Schema}.${memberTablesConfig.Fires.TableName
+    } where (${memberTablesConfig.Fires.DateTimeFieldName} between $${preParameter++} and $${preParameter++})`;
+    const preParams = [dateTimeFrom, dateTimeTo];
 
-        var getFiltersResult = memberUtils.getFilters(options, query, params, parameter);
+    const getFiltersResult = utils.getFilters(options, preQuery, preParams, preParameter);
+    const { query, params } = getFiltersResult;
 
-        query = getFiltersResult.query;
-        params = getFiltersResult.params;
-        parameter = getFiltersResult.parameter;
-
-        // Execution of the query
-        client.query(query, params, function(err, result) {
-          done();
-          if(!err) return callback(null, result);
-          else return callback(err);
-        });
-      } else return callback(err);
-    });
+    sequelize.query(
+      query, { bind: params, type: sequelize.QueryTypes.SELECT },
+    ).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
@@ -459,24 +375,19 @@ var Filter = function() {
    * @memberof Filter
    * @inner
    */
-  this.searchForPAs = function(value, callback) {
-    // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
-        var parameters = ['%' + value + '%'];
-        var query = "select " + memberTablesConfig.UCF.IdFieldName + " as id, upper(" + memberTablesConfig.UCF.NameFieldName + ") as name " +
-        "from " + memberTablesConfig.UCF.Schema + "." + memberTablesConfig.UCF.TableName +
-        " where unaccent(upper(" + memberTablesConfig.UCF.NameFieldName + ")) like unaccent(upper($1))";
+  this.searchForPAs = function (value, callback) {
+    const params = [`%${value}%`];
+    const query = `select ${memberTablesConfig.UCF.IdFieldName} as id, upper(${memberTablesConfig.UCF.NameFieldName}) as name `
+        + `from ${memberTablesConfig.UCF.Schema}.${memberTablesConfig.UCF.TableName
+        } where unaccent(upper(${memberTablesConfig.UCF.NameFieldName})) like unaccent(upper($1))`;
 
-        // Execution of the query
-        client.query(query, parameters, function(err, result) {
-          done();
-          if(!err) return callback(null, result);
-          else return callback(err);
-        });
-      } else return callback(err);
-    });
+    sequelize.query(
+      query, { bind: params, type: sequelize.QueryTypes.SELECT },
+    ).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
+
 
   /**
    * Returns the cities that match the given value.
@@ -488,56 +399,44 @@ var Filter = function() {
    * @memberof Filter
    * @inner
    */
-  this.searchForCities = function(value, countries, states, callback) {
-    // Counter of the query parameters
-    var parameter = 1;
+  this.searchForCities = function (value, countries, states, callback) {
+    const filters = [];
+    filters.append(Sequelize.where(
+      Sequelize.fn('unaccent', Sequelize.col('name_2')), {
+        [Op.iLike]: Sequelize.fn('unaccent', value),
+      },
+    ));
 
+    if (countries !== null) {
+      const countriesArray = countries.split(',');
+      filters.append({
+        id_0: {
+          [Op.in]: countriesArray,
+        },
+      });
+    }
+
+    if (states !== null) {
+      const statesArray = states.split(',');
+      filters.append({
+        id_1: {
+          [Op.in]: statesArray,
+        },
+      });
+    }
     // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
-        var query = "select a." + memberTablesConfig.Cities.IdFieldName + " as id, upper(a." + memberTablesConfig.Cities.NameFieldName +
-                    ") as name, b." + memberTablesConfig.States.BdqNameFieldName + " as state " +
-                    "from " + memberTablesConfig.Cities.Schema + "." + memberTablesConfig.Cities.TableName + " a " +
-                    "inner join " + memberTablesConfig.States.Schema + "." + memberTablesConfig.States.TableName + 
-                    " b on (a." + memberTablesConfig.Cities.StateIdFieldName + "=b." + memberTablesConfig.States.IdFieldName + ") " +
-                    "inner join " + memberTablesConfig.Countries.Schema + "." + memberTablesConfig.Countries.TableName + 
-                    " c on (b." + memberTablesConfig.States.CountryIdFieldName + "=c." + memberTablesConfig.Countries.IdFieldName + ") " +
-                    " where unaccent(upper(a." + memberTablesConfig.Cities.NameFieldName + ")) like unaccent(upper($" + (parameter++) + "))";
-        var parameters = ['%' + value + '%'];
-
-        if(countries !== null) {
-          var countriesArray = countries.split(',');
-          query += " and c." + memberTablesConfig.Countries.IdFieldName + " in (";
-
-          for(var i = 0, countriesArrayLength = countriesArray.length; i < countriesArrayLength; i++) {
-            query += "$" + (parameter++) + ",";
-            parameters.push(countriesArray[i]);
-          }
-
-          query = query.substring(0, (query.length - 1)) + ")";
-        }
-
-        if(states !== null) {
-          var statesArray = states.split(',');
-          query += " and b." + memberTablesConfig.States.IdFieldName + " in (";
-
-          for(var i = 0, statesArrayLength = statesArray.length; i < statesArrayLength; i++) {
-            query += "$" + (parameter++) + ",";
-            parameters.push(statesArray[i]);
-          }
-
-          query = query.substring(0, (query.length - 1)) + ")";
-        }
-
-        // Execution of the query
-        client.query(query, parameters, function(err, result) {
-          done();
-          if(!err) return callback(null, result);
-          else return callback(err);
-        });
-      } else return callback(err);
-    });
+    Municipios.findAll({
+      include: [Paises, Estados],
+      where: Sequelize.where(
+        Sequelize.fn('unaccent', Sequelize.col('name_2')), {
+          [Op.iLike]: Sequelize.fn('unaccent', value),
+        },
+      ),
+    }).then((municipios) => {
+      console.log(municipios);
+      callback(null, municipios);
+    }).catch(callback);
   };
-};
+}
 
 module.exports = Filter;

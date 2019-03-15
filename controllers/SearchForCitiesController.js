@@ -1,4 +1,9 @@
-"use strict";
+const Filter = require('../models/Filter.js');
+
+function checkParam(queryParam) {
+  const param = queryParam;
+  return param !== undefined && param !== null && param !== '' ? param : null;
+}
 
 /**
  * Controller responsible for returning the cities that match the provided value.
@@ -8,10 +13,9 @@
  *
  * @property {object} memberFilter - 'Filter' model.
  */
-var SearchForCitiesController = function(app) {
-
+function SearchForCitiesController(app) {
   // 'Filter' model
-  var memberFilter = new (require('../models/Filter.js'))();
+  const memberFilter = new Filter();
 
   /**
    * Processes the request and returns a response.
@@ -22,30 +26,30 @@ var SearchForCitiesController = function(app) {
    * @memberof SearchForCitiesController
    * @inner
    */
-  var searchForCitiesController = function(request, response) {
-
+  const searchForCitiesController = function (request, response) {
     // Setting the string to uppercase, removing excessive spaces and non alphanumeric characters
-    var searchValue = request.query.value.toUpperCase().replace(/( )+/g, ' ').trim();
+    const searchValue = request.query.value.toUpperCase().replace(/( )+/g, ' ').trim();
 
-    var countries = request.query.countries !== undefined && request.query.countries !== null && request.query.countries !== "" ? request.query.countries : null;
-    var states = request.query.states !== undefined && request.query.states !== null && request.query.states !== "" ? request.query.states : null;
+    const countries = checkParam(request.query.countries);
+    const states = checkParam(request.query.states);
 
-    if(searchValue.length >= request.query.minLength) {
-      // Call of the method 'searchForCities', responsible for returning the cities that match the provided value
-      memberFilter.searchForCities(searchValue, countries, states, function(err, result) {
-        if(err) return console.error(err);
+    if (searchValue.length >= request.query.minLength) {
+      // Call of the method 'searchForCities', responsible for returning
+      // the cities that match the provided value
+      memberFilter.searchForCities(searchValue, countries, states, (err, result) => {
+        if (err) return console.error(err);
 
         // Array responsible for keeping the data obtained by the method 'searchForCities'
-        var data = [];
+        const data = [];
 
         // Conversion of the result object to array
-        result.rows.forEach(function(val) {
+        result.rows.forEach((val) => {
           data.push({
-            label: val.name + ' - ' + val.state,
+            label: `${val.name} - ${val.state}`,
             value: {
               id: val.id,
-              type: val.state
-            }
+              type: val.state,
+            },
           });
         });
 
@@ -58,6 +62,6 @@ var SearchForCitiesController = function(app) {
   };
 
   return searchForCitiesController;
-};
+}
 
 module.exports = SearchForCitiesController;
