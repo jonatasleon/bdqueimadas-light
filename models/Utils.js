@@ -1,4 +1,7 @@
-"use strict";
+const fs = require('fs');
+const rimraf = require('rimraf');
+
+const tablesConfig = require('../configurations/Tables.json');
 
 /**
  * Utilities class of the BDQueimadas (server side).
@@ -7,27 +10,13 @@
  * @author Jean Souza [jean.souza@funcate.org.br]
  *
  * @property {object} self - Object that refers to the 'Utils' instance.
- * @property {object} memberPath - 'path' module.
- * @property {object} memberPgFormat - 'pg-format' module.
- * @property {object} memberFs - 'fs' module.
- * @property {object} memberRimraf - 'rimraf' module.
- * @property {json} memberTablesConfig - Tables configuration.
+ * @property {object} path - 'path' module.
+ * @property {object} pgFormat - 'pg-format' module.
+ * @property {object} fs - 'fs' module.
+ * @property {object} rimraf - 'rimraf' module.
+ * @property {json} tablesConfig - Tables configuration.
  */
-var Utils = function() {
-
-  // Object that refers to the 'Utils' instance
-  var self = this;
-  // 'path' module
-  var memberPath = require('path');
-  // 'pg-format' module
-  var memberPgFormat = require('pg-format');
-  // 'fs' module
-  var memberFs = require('fs');
-  // 'rimraf' module
-  var memberRimraf = require('rimraf');
-  // Tables configuration
-  var memberTablesConfig = require(memberPath.join(__dirname, '../configurations/Tables.json'));
-
+const Utils = function () {
   /**
    * Creates and returns filters for the system queries.
    * @param {object} options - Filtering options
@@ -41,95 +30,102 @@ var Utils = function() {
    * @memberof Utils
    * @inner
    */
-  this.getFilters = function(options, query, params, parameter, filterRules) {
+  this.getFilters = function (options, query_, params, parameter, filterRules) {
+    let query = `${query_}`;
     // If the 'options.satellites' parameter exists, a satellites 'where' clause is created
-    if(options.satellites !== undefined) {
-      var satellitesArray = options.satellites.split(',');
-      query += " and " + (options.tableAlias !== undefined ? options.tableAlias + "." : "") + memberTablesConfig.Fires.SatelliteFieldName + " in (";
+    if (options.satellites !== undefined) {
+      const satellitesArray = options.satellites.split(',');
+      query += ` and ${options.tableAlias !== undefined ? `${options.tableAlias}.` : ''}${tablesConfig.Fires.SatelliteFieldName} in (`;
 
-      for(var i = 0, satellitesArrayLength = satellitesArray.length; i < satellitesArrayLength; i++) {
-        if(options.pgFormatQuery !== undefined) query += "%L,";
-        else query += "$" + (parameter++) + ",";
+      for (let i = 0, satellitesArrayLength = satellitesArray.length; i < satellitesArrayLength; i++) {
+        if (options.pgFormatQuery !== undefined) query += '%L,';
+        else query += `$${parameter++},`;
         params.push(satellitesArray[i]);
       }
 
-      query = query.substring(0, (query.length - 1)) + ")";
+      query = `${query.substring(0, (query.length - 1))})`;
     }
 
     // If the 'options.biomes' parameter exists, a biomes 'where' clause is created
-    if(options.biomes !== undefined) {
-      var biomesArray = options.biomes.split(',');
-      query += " and (" + (options.tableAlias !== undefined ? options.tableAlias + "." : "") + memberTablesConfig.Fires.BiomeIdFieldName + " in (";
+    if (options.biomes !== undefined) {
+      const biomesArray = options.biomes.split(',');
+      query += ` and (${options.tableAlias !== undefined ? `${options.tableAlias}.` : ''}${tablesConfig.Fires.BiomeIdFieldName} in (`;
 
-      for(var i = 0, biomesArrayLength = biomesArray.length; i < biomesArrayLength; i++) {
-        if(options.pgFormatQuery !== undefined) query += "%L,";
-        else query += "$" + (parameter++) + ",";
+      for (let i = 0, biomesArrayLength = biomesArray.length; i < biomesArrayLength; i++) {
+        if (options.pgFormatQuery !== undefined) query += '%L,';
+        else query += `$${parameter++},`;
         params.push(biomesArray[i]);
       }
 
-      query = query.substring(0, (query.length - 1)) + "))";
+      query = `${query.substring(0, (query.length - 1))}))`;
     }
 
     // If the 'options.countries' parameter exists, a countries 'where' clause is created
-    if(options.countries !== undefined && (filterRules === undefined || filterRules === null || filterRules.ignoreCountryFilter === undefined || !filterRules.ignoreCountryFilter)) {
-      var countriesArray = options.countries.split(',');
+    if (options.countries !== undefined && (filterRules === undefined || filterRules === null
+        || filterRules.ignoreCountryFilter === undefined || !filterRules.ignoreCountryFilter)) {
+      const countriesArray = options.countries.split(',');
 
-      query += " and (" + (options.tableAlias !== undefined ? options.tableAlias + "." : "") + memberTablesConfig.Fires.CountryFieldName + " in (";
+      query += ` and (${options.tableAlias !== undefined ? `${options.tableAlias}.` : ''}${tablesConfig.Fires.CountryFieldName} in (`;
 
-      for(var i = 0, countriesArrayLength = countriesArray.length; i < countriesArrayLength; i++) {
-        if(options.pgFormatQuery !== undefined) query += "%L,";
-        else query += "$" + (parameter++) + ",";
+      for (let i = 0, countriesArrayLength = countriesArray.length; i < countriesArrayLength; i++) {
+        if (options.pgFormatQuery !== undefined) query += '%L,';
+        else query += `$${parameter++},`;
         params.push(countriesArray[i]);
       }
 
-      query = query.substring(0, (query.length - 1)) + "))";
+      query = `${query.substring(0, (query.length - 1))}))`;
     }
 
-    var filterStates = (options.states !== undefined && (filterRules === undefined || filterRules === null || filterRules.ignoreStateFilter === undefined || !filterRules.ignoreStateFilter));
+    const filterStates = (options.states !== undefined
+        && (filterRules === undefined
+            || filterRules === null || filterRules.ignoreStateFilter === undefined
+            || !filterRules.ignoreStateFilter)
+    );
 
     // If the 'options.states' parameter exists, a states 'where' clause is created
-    if(filterStates) {
-      var statesArray = options.states.split(',');
-      query += " and (" + (options.tableAlias !== undefined ? options.tableAlias + "." : "") + memberTablesConfig.Fires.StateFieldName + " in (";
+    if (filterStates) {
+      const statesArray = options.states.split(',');
+      query += ` and (${options.tableAlias !== undefined ? `${options.tableAlias}.` : ''}${tablesConfig.Fires.StateFieldName} in (`;
 
-      for(var i = 0, statesArrayLength = statesArray.length; i < statesArrayLength; i++) {
-        if(options.pgFormatQuery !== undefined) query += "%L,";
-        else query += "$" + (parameter++) + ",";
+      for (let i = 0, statesArrayLength = statesArray.length; i < statesArrayLength; i++) {
+        if (options.pgFormatQuery !== undefined) query += '%L,';
+        else query += `$${parameter++},`;
         params.push(statesArray[i]);
       }
 
-      query = query.substring(0, (query.length - 1)) + "))";
+      query = `${query.substring(0, (query.length - 1))}))`;
     }
 
     // If the 'options.cities' parameter exists, a cities 'where' clause is created
-    if(options.cities !== undefined && (filterRules === undefined || filterRules === null || filterRules.ignoreCityFilter === undefined || !filterRules.ignoreCityFilter)) {
-      var citiesArray = options.cities.split(',');
-      query += " and (" + (options.tableAlias !== undefined ? options.tableAlias + "." : "") + memberTablesConfig.Fires.CityFieldName + " in (";
+    if (options.cities !== undefined && (filterRules === undefined || filterRules === null
+        || filterRules.ignoreCityFilter === undefined || !filterRules.ignoreCityFilter)) {
+      const citiesArray = options.cities.split(',');
+      query += ` and (${options.tableAlias !== undefined ? `${options.tableAlias}.` : ''}${tablesConfig.Fires.CityFieldName} in (`;
 
-      for(var i = 0, citiesArrayLength = citiesArray.length; i < citiesArrayLength; i++) {
-        if(options.pgFormatQuery !== undefined) query += "%L,";
-        else query += "$" + (parameter++) + ",";
+      for (let i = 0, citiesArrayLength = citiesArray.length; i < citiesArrayLength; i++) {
+        if (options.pgFormatQuery !== undefined) query += '%L,';
+        else query += `$${parameter++},`;
         params.push(citiesArray[i]);
       }
 
-      query = query.substring(0, (query.length - 1)) + "))";
+      query = `${query.substring(0, (query.length - 1))}))`;
     }
 
     // If the 'options.extent' parameter exists, a extent 'where' clause is created
-    if(options.extent !== undefined) {
-      if(options.pgFormatQuery !== undefined) query += " and ST_Intersects(" + (options.tableAlias !== undefined ? options.tableAlias + "." : "") + memberTablesConfig.Fires.GeometryFieldName + ", ST_MakeEnvelope(%L, %L, %L, %L, 4326))";
-      else query += " and ST_Intersects(" + (options.tableAlias !== undefined ? options.tableAlias + "." : "") + memberTablesConfig.Fires.GeometryFieldName + ", ST_MakeEnvelope($" + (parameter++) + ", $" + (parameter++) + ", $" + (parameter++) + ", $" + (parameter++) + ", 4326))";
+    if (options.extent !== undefined) {
+      if (options.pgFormatQuery !== undefined) query += ` and ST_Intersects(${options.tableAlias !== undefined ? `${options.tableAlias}.` : ''}${tablesConfig.Fires.GeometryFieldName}, ST_MakeEnvelope(%L, %L, %L, %L, 4326))`;
+      else query += ` and ST_Intersects(${options.tableAlias !== undefined ? `${options.tableAlias}.` : ''}${tablesConfig.Fires.GeometryFieldName}, ST_MakeEnvelope($${parameter++}, $${parameter++}, $${parameter++}, $${parameter++}, 4326))`;
       params.push(options.extent[0], options.extent[1], options.extent[2], options.extent[3]);
     }
 
     return {
-      query: query,
-      params: params,
-      parameter: parameter
+      query,
+      params,
+      parameter,
     };
   };
 
-  
+
   /**
    * Verifies if a string exists in an array.
    * @param {array} array - Array where the search will be performed
@@ -140,11 +136,10 @@ var Utils = function() {
    * @memberof Utils
    * @inner
    */
-  this.stringInArray = function(array, string) {
-    if(array !== null) {
-      for(var i = 0, arrayLength = array.length; i < arrayLength; i++) {
-        if(array[i].toString() === string.toString())
-          return true;
+  this.stringInArray = function (array, string) {
+    if (array !== null) {
+      for (let i = 0, arrayLength = array.length; i < arrayLength; i++) {
+        if (array[i].toString() === string.toString()) return true;
       }
     }
 
@@ -160,11 +155,11 @@ var Utils = function() {
    * @memberof Utils
    * @inner
    */
-  this.deleteFolderRecursively = function(path, callback) {
-    if(memberFs.existsSync(path)) {
+  this.deleteFolderRecursively = function (path, callback) {
+    if (fs.existsSync(path)) {
       try {
-        memberRimraf(path, callback);
-      } catch(e) {
+        rimraf(path, callback);
+      } catch (e) {
         console.log(e);
       }
     }

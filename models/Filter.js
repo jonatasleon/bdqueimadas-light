@@ -8,7 +8,8 @@ const memberTablesConfig = require(path.join(__dirname, '../configurations/Table
 const Utils = require('./Utils.js');
 // PostgreSQL connection pool
 const {
-  Municipios, Estados, Paises, Biomas, Sequelize, sequelize, Op,
+  Municipios, Estados, Paises, Biomas,
+  Sequelize, sequelize, Op,
 } = require('../pg');
 
 /**
@@ -59,7 +60,7 @@ function Filter() {
    */
   this.getCountries = function (callback) {
     Paises.findAll({
-      order: ['id_0', 'ASC'],
+      order: [['id_0', 'ASC']],
     }).then((result) => {
       callback(null, result);
     }).catch(callback);
@@ -76,7 +77,7 @@ function Filter() {
    */
   this.getBiomes = function (callback) {
     Biomas.findAll({
-      order: ['nome', 'ASC'],
+      order: [['nome', 'ASC']],
     }).then((result) => {
       callback(null, result);
     }).catch(callback);
