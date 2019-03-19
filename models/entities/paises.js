@@ -8,7 +8,10 @@ module.exports = (sequelize, DataTypes) => {
       },
       id: DataTypes.BIGINT,
       id_0: DataTypes.BIGINT,
-      name_0: DataTypes.STRING,
+      name: {
+        type: DataTypes.STRING,
+        field: 'name_0',
+      },
       continente: DataTypes.BIGINT,
       geom: DataTypes.GEOMETRY('MultiPolygon', 4326),
     },

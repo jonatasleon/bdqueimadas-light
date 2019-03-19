@@ -7,7 +7,10 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
       },
       __gid: DataTypes.BIGINT,
-      nome: DataTypes.STRING,
+      name: {
+        type: DataTypes.STRING,
+        field: 'nome',
+      },
       shape_area: DataTypes.NUMERIC,
       shape_len: DataTypes.NUMERIC,
       geom: DataTypes.GEOMETRY('MultiPolygon', 4326),
