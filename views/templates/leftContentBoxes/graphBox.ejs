@@ -15,7 +15,7 @@
                     <label for="countries-graphics"><%= __('Países') %></label>
                     <select multiple id="countries-graphics" name="countries-graphics" class="form-control">
                       <option value="" selected><%= __('Todos os Países') %></option>
-                      <% countries.rows.forEach(function(country, index) { %>
+                      <% countries.forEach(function(country, index) { %>
                         <option value="<%- country.id %>"><%- country.name %></option>
                       <% }) %>
                     </select>
@@ -104,7 +104,7 @@
                   <label for="filter-biome-graphics"><%= __('Focos dos Biomas') %></label>
                   <select multiple class="form-control" id="filter-biome-graphics">
                     <option value="all" selected><%= __('TODOS') %></option>
-                    <% biomes.rows.forEach(function(biome, index) { %>
+                    <% biomes.forEach(function(biome, index) { %>
                       <option value="<%- biome.id %>"><%- biome.name %></option>
                     <% }) %>
                   </select>

@@ -3,7 +3,7 @@
     <label for="countries"><%= __('Países') %></label>
     <select multiple id="countries" name="countries" class="form-control" style="width: 148px;">
       <option value="" selected><%= __('Todos os Países') %></option>
-      <% countries.rows.forEach(function(country, index) { %>
+      <% countries.forEach(function(country, index) { %>
         <option value="<%- country.id %>"><%- country.name %></option>
       <% }) %>
     </select>
@@ -107,7 +107,8 @@
     <label for="filter-biome"><%= __('Focos nos Biomas') %></label>
     <select multiple class="form-control" id="filter-biome" style="width: 148px;">
       <option value="all" selected><%= __('TODOS') %></option>
-      <% biomes.rows.forEach(function(biome, index) { %>
+      <%= biomes %>
+      <% biomes.forEach(function(biome, index) { %>
         <option value="<%- biome.id %>"><%- biome.name %></option>
       <% }) %>
     </select>
