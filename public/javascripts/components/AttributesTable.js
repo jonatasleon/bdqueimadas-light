@@ -21,21 +21,21 @@ define(
   function(Utils, Filter, TerraMA2WebComponents) {
 
     // Attributes table object (DataTables)
-    var memberAttributesTable = null;
+    var attributesTable = null;
     // Current initial date / time filter
-    var memberDateTimeFrom = null;
+    var dateTimeFrom = null;
     // Current final date / time filter
-    var memberDateTimeTo = null;
+    var dateTimeTo = null;
     // Current satellites filter
-    var memberSatellites = "all";
+    var satellites = "all";
     // Current biomes filter
-    var memberBiomes = "all";
+    var biomes = "all";
     // Current countries filter
-    var memberCountries = null;
+    var countries = null;
     // Current states filter
-    var memberStates = null;
+    var states = null;
     // Current cities filter
-    var memberCities = null;
+    var cities = null;
 
     /**
      * Creates and returns an array with the attributes table columns names.
@@ -123,23 +123,23 @@ define(
 
       $('#attributes-table').empty().append("<thead>" + titles + "</thead><tfoot>" + titles + "</tfoot>");
 
-      memberDateTimeFrom = Filter.getFormattedDateFrom(Utils.getConfigurations().firesDateFormat) + ' ' + Filter.getTimeFrom();
-      memberDateTimeTo = Filter.getFormattedDateTo(Utils.getConfigurations().firesDateFormat) + ' ' + Filter.getTimeTo();
+      dateTimeFrom = Filter.getFormattedDateFrom(Utils.getConfigurations().firesDateFormat) + ' ' + Filter.getTimeFrom();
+      dateTimeTo = Filter.getFormattedDateTo(Utils.getConfigurations().firesDateFormat) + ' ' + Filter.getTimeTo();
 
       if(Filter.isInitialFilter()) {
-        memberSatellites = Filter.getInitialSatellites().toString();
+        satellites = Filter.getInitialSatellites().toString();
       } else {
-        memberSatellites = (Utils.stringInArray(Filter.getSatellites(), "all") ? '' : Filter.getSatellites().toString());
+        satellites = (Utils.stringInArray(Filter.getSatellites(), "all") ? '' : Filter.getSatellites().toString());
       }
 
-      memberBiomes = (Utils.stringInArray(Filter.getBiomes(), "all") ? '' : Filter.getBiomes().toString());
+      biomes = (Utils.stringInArray(Filter.getBiomes(), "all") ? '' : Filter.getBiomes().toString());
 
       getSpatialFilterData(function(countries, states, cities) {
-        memberCountries = countries;
-        memberStates = states;
-        memberCities = cities;
+        countries = countries;
+        states = states;
+        cities = cities;
 
-        memberAttributesTable = $('#attributes-table').DataTable(
+        attributesTable = $('#attributes-table').DataTable(
           {
             "order": getAttributesTableOrder(),
             "processing": true,
@@ -148,13 +148,13 @@ define(
               "url": Utils.getBaseUrl() + "get-attributes-table",
               "type": "POST",
               "data": function(data) {
-                data.dateTimeFrom = memberDateTimeFrom;
-                data.dateTimeTo = memberDateTimeTo;
-                data.satellites = memberSatellites;
-                data.biomes = memberBiomes;
-                data.countries = memberCountries;
-                data.states = memberStates;
-                data.cities = memberCities;
+                data.dateTimeFrom = dateTimeFrom;
+                data.dateTimeTo = dateTimeTo;
+                data.satellites = satellites;
+                data.biomes = biomes;
+                data.countries = countries;
+                data.states = states;
+                data.cities = cities;
               }
             },
             "columns": getAttributesTableColumnNamesArray(),
@@ -191,7 +191,7 @@ define(
     var updateAttributesTable = function(useAttributesTableFilter) {
       $('#filter-error-dates-attributes-table').text('');
 
-      if(memberAttributesTable !== null) {
+      if(attributesTable !== null) {
         var dates = Utils.getFilterDates(true, true, true, (useAttributesTableFilter ? 1 : 0));
         var times = Utils.getFilterTimes(true, (useAttributesTableFilter ? 1 : 0));
 
@@ -201,20 +201,20 @@ define(
           } else if(times.length === 0) {
             $('#filter-error-dates-attributes-table').text('Horas inválidas!');
           } else {
-            memberDateTimeFrom = Utils.dateToString(Utils.stringToDate(dates[0], 'YYYY/MM/DD'), Utils.getConfigurations().firesDateFormat) + ' ' + times[0];
-            memberDateTimeTo = Utils.dateToString(Utils.stringToDate(dates[1], 'YYYY/MM/DD'), Utils.getConfigurations().firesDateFormat) + ' ' + times[1];
+            dateTimeFrom = Utils.dateToString(Utils.stringToDate(dates[0], 'YYYY/MM/DD'), Utils.getConfigurations().firesDateFormat) + ' ' + times[0];
+            dateTimeTo = Utils.dateToString(Utils.stringToDate(dates[1], 'YYYY/MM/DD'), Utils.getConfigurations().firesDateFormat) + ' ' + times[1];
 
             if(useAttributesTableFilter) {
-              memberSatellites = (Utils.stringInArray($('#filter-satellite-attributes-table').val(), "all") ? '' : $('#filter-satellite-attributes-table').val().toString());
-              memberBiomes = (Utils.stringInArray($('#filter-biome-attributes-table').val(), "all") ? '' : $('#filter-biome-attributes-table').val().toString());
+              satellites = (Utils.stringInArray($('#filter-satellite-attributes-table').val(), "all") ? '' : $('#filter-satellite-attributes-table').val().toString());
+              biomes = (Utils.stringInArray($('#filter-biome-attributes-table').val(), "all") ? '' : $('#filter-biome-attributes-table').val().toString());
             } else {
               if(Filter.isInitialFilter()) {
-                memberSatellites = Filter.getInitialSatellites().toString();
+                satellites = Filter.getInitialSatellites().toString();
               } else {
-                memberSatellites = (Utils.stringInArray(Filter.getSatellites(), "all") ? '' : Filter.getSatellites().toString());
+                satellites = (Utils.stringInArray(Filter.getSatellites(), "all") ? '' : Filter.getSatellites().toString());
               }
 
-              memberBiomes = (Utils.stringInArray(Filter.getBiomes(), "all") ? '' : Filter.getBiomes().toString());
+              biomes = (Utils.stringInArray(Filter.getBiomes(), "all") ? '' : Filter.getBiomes().toString());
 
               $('#filter-date-from-attributes-table').val(Filter.getFormattedDateFrom('YYYY/MM/DD'));
               $('#filter-date-to-attributes-table').val(Filter.getFormattedDateTo('YYYY/MM/DD'));
@@ -223,11 +223,11 @@ define(
             Filter.updateSatellitesSelect(1, Utils.stringToDate(dates[0], 'YYYY/MM/DD'), Utils.stringToDate(dates[1], 'YYYY/MM/DD'));
 
             getSpatialFilterData(function(countries, states, cities) {
-              memberCountries = countries;
-              memberStates = states;
-              memberCities = cities;
+              countries = countries;
+              states = states;
+              cities = cities;
 
-              memberAttributesTable.ajax.reload();
+              attributesTable.ajax.reload();
             });
           }
         }
@@ -249,7 +249,7 @@ define(
 
     return {
       updateAttributesTable: updateAttributesTable,
-    	init: init
+      init: init
     };
   }
 );
