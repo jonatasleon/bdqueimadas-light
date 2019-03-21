@@ -1,4 +1,11 @@
-"use strict";
+// 'path' module
+const path = require('path');
+// Tables configuration
+const tablesConfig = require(path.join(__dirname, '../configurations/Tables.json'));
+// 'Utils' model
+const Utils = require('./Utils');
+// PostgreSQL connection pool
+const { sequelize } = require('../pg');
 
 /**
  * Graphics model, which contains graphics related database manipulations.
@@ -6,22 +13,12 @@
  *
  * @author Jean Souza [jean.souza@funcate.org.br]
  *
- * @property {object} memberPath - 'path' module.
- * @property {json} memberTablesConfig - Tables configuration.
- * @property {object} memberUtils - 'Utils' model.
+ * @property {object} path - 'path' module.
+ * @property {json} tablesConfig - Tables configuration.
+ * @property {object} utils - 'Utils' model.
  * @property {object} memberPgPool - PostgreSQL connection pool.
  */
-var Graphics = function() {
-
-  // 'path' module
-  var memberPath = require('path');
-  // Tables configuration
-  var memberTablesConfig = require(memberPath.join(__dirname, '../configurations/Tables.json'));
-  // 'Utils' model
-  var memberUtils = new (require('./Utils.js'))();
-  // PostgreSQL connection pool
-  var memberPgPool = require('../pg');
-
+const Graphics = function () {
   /**
    * Callback of the database operations.
    * @callback Graphics~databaseOperationCallback
@@ -29,6 +26,7 @@ var Graphics = function() {
    * @param {json} result - Result of the operation
    */
 
+  const utils = new Utils();
   /**
    * Returns the count of the fires grouped by the received key.
    * @param {string} dateTimeFrom - Initial date / time
@@ -43,54 +41,51 @@ var Graphics = function() {
    * @memberof Graphics
    * @inner
    */
-  this.getFiresCount = function(dateTimeFrom, dateTimeTo, key, filterRules, options, callback) {
+  this.getFiresCount = function (dateTimeFrom, dateTimeTo, key, filterRules, options, callback) {
     // Counter of the query parameters
-    var parameter = 1;
+    let parameterAux = 1;
 
     // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
+    let fields = `${key}, count(*) as count`;
+    let group = key;
 
-        var fields = key + ", count(*) as count";
-        var group = key;
+    if (options.y !== undefined) {
+      const yFields = options.y.match(/[^{\}]+(?=})/g);
+      const index = yFields.indexOf(key);
+      if (index > -1) yFields.splice(index, 1);
 
-        if(options.y !== undefined) {
-          var yFields = options.y.match(/[^{\}]+(?=})/g);
-          var index = yFields.indexOf(key);
-          if(index > -1) yFields.splice(index, 1);
+      if (yFields.length > 0) {
+        fields += `, ${yFields.toString()}`;
+        group += `, ${yFields.toString()}`;
+      }
+    }
 
-          if(yFields.length > 0) {
-            fields += ", " + yFields.toString();
-            group += ", " + yFields.toString();
-          }
-        }
+    // Creation of the query
+    const queryAux = `select ${fields} from ${tablesConfig.Fires.Schema}.${tablesConfig.Fires.TableName} where (${tablesConfig.Fires.DateTimeFieldName} between $${parameterAux++} and $${parameterAux++})`;
+    const paramsAux = [dateTimeFrom, dateTimeTo];
 
-        // Creation of the query
-        var query = "select " + fields + " from " + memberTablesConfig.Fires.Schema + "." + memberTablesConfig.Fires.TableName + " where (" + memberTablesConfig.Fires.DateTimeFieldName + " between $" + (parameter++) + " and $" + (parameter++) + ")",
-            params = [dateTimeFrom, dateTimeTo];
+    const getFiltersResult = utils.getFilters(options, queryAux, paramsAux, parameterAux, filterRules);
 
-        var getFiltersResult = memberUtils.getFilters(options, query, params, parameter, filterRules);
+    let { query, params, parameter } = getFiltersResult;
 
-        query = getFiltersResult.query;
-        params = getFiltersResult.params;
-        parameter = getFiltersResult.parameter;
+    query += ` group by ${group} order by count desc, ${key} asc`;
 
-        query += " group by " + group + " order by count desc, " + key + " asc";
+    // If the 'options.limit' parameter exists, a limit clause is created
+    if (options.limit !== undefined) {
+      query += ` limit $${parameter++}`;
+      params.push(options.limit);
+    }
 
-        // If the 'options.limit' parameter exists, a limit clause is created
-        if(options.limit !== undefined) {
-          query += " limit $" + (parameter++);
-          params.push(options.limit);
-        }
-
-        // Execution of the query
-        client.query(query, params, function(err, result) {
-          done();
-          if(!err) return callback(null, result);
-          else return callback(err);
-        });
-      } else return callback(err);
-    });
+    // Execution of the query
+    sequelize.query(
+      query,
+      {
+        bind: params,
+        type: sequelize.QueryTypes.SELECT,
+      },
+    ).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
@@ -106,38 +101,34 @@ var Graphics = function() {
    * @memberof Graphics
    * @inner
    */
-  this.getFiresTotalCount = function(dateTimeFrom, dateTimeTo, filterRules, options, callback) {
+  this.getFiresTotalCount = function (dateTimeFrom, dateTimeTo, filterRules, options, callback) {
     // Counter of the query parameters
-    var parameter = 1;
+    let parameterAux = 1;
 
     // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
+    // Creation of the query
+    const queryAux = `select count(*) as count from ${tablesConfig.Fires.Schema}.${tablesConfig.Fires.TableName} where (${tablesConfig.Fires.DateTimeFieldName} between $${parameterAux++} and $${parameterAux++})`;
+    const paramsAux = [dateTimeFrom, dateTimeTo];
 
-        // Creation of the query
-        var query = "select count(*) as count from " + memberTablesConfig.Fires.Schema + "." + memberTablesConfig.Fires.TableName + " where (" + memberTablesConfig.Fires.DateTimeFieldName + " between $" + (parameter++) + " and $" + (parameter++) + ")",
-            params = [dateTimeFrom, dateTimeTo];
+    const getFiltersResult = utils.getFilters(options, queryAux, paramsAux, parameterAux, filterRules);
+    let { query, params, parameter } = getFiltersResult;
 
-        var getFiltersResult = memberUtils.getFilters(options, query, params, parameter, filterRules);
+    // If the 'options.limit' parameter exists, a limit clause is created
+    if (options.limit !== undefined) {
+      query += ` limit $${parameter++}`;
+      params.push(options.limit);
+    }
 
-        query = getFiltersResult.query;
-        params = getFiltersResult.params;
-        parameter = getFiltersResult.parameter;
-
-        // If the 'options.limit' parameter exists, a limit clause is created
-        if(options.limit !== undefined) {
-          query += " limit $" + (parameter++);
-          params.push(options.limit);
-        }
-
-        // Execution of the query
-        client.query(query, params, function(err, result) {
-          done();
-          if(!err) return callback(null, result);
-          else return callback(err);
-        });
-      } else return callback(err);
-    });
+    // Execution of the query
+    sequelize.query(
+      query,
+      {
+        bind: params,
+        type: sequelize.QueryTypes.SELECT,
+      },
+    ).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
@@ -153,42 +144,40 @@ var Graphics = function() {
    * @memberof Graphics
    * @inner
    */
-  this.getFiresCountByWeek = function(dateTimeFrom, dateTimeTo, filterRules, options, callback) {
+  this.getFiresCountByWeek = function (dateTimeFrom, dateTimeTo, filterRules, options, callback) {
     // Counter of the query parameters
-    var parameter = 1;
+    let parameterAux = 1;
 
     // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
-        // Creation of the query
-        var query = "select TO_CHAR(date_trunc('week', " + memberTablesConfig.Fires.DateTimeFieldName + ")::date, 'YYYY/MM/DD') as start, " +
-        "TO_CHAR((date_trunc('week', " + memberTablesConfig.Fires.DateTimeFieldName + ") + '6 days')::date, 'YYYY/MM/DD') as end, count(*) AS count " +
-        "from " + memberTablesConfig.Fires.Schema + "." + memberTablesConfig.Fires.TableName +
-        " where (" + memberTablesConfig.Fires.DateTimeFieldName + " between $" + (parameter++) + " and $" + (parameter++) + ")",
-            params = [dateTimeFrom, dateTimeTo];
+    // Creation of the query
+    const queryAux = `select TO_CHAR(date_trunc('week', ${tablesConfig.Fires.DateTimeFieldName})::date, 'YYYY/MM/DD') as start, `
+        + `TO_CHAR((date_trunc('week', ${tablesConfig.Fires.DateTimeFieldName}) + '6 days')::date, 'YYYY/MM/DD') as end, count(*) AS count `
+        + `from ${tablesConfig.Fires.Schema}.${tablesConfig.Fires.TableName
+        } where (${tablesConfig.Fires.DateTimeFieldName} between $${parameterAux++} and $${parameterAux++})`;
+    const paramsAux = [dateTimeFrom, dateTimeTo];
 
-        var getFiltersResult = memberUtils.getFilters(options, query, params, parameter, filterRules);
+    const getFiltersResult = utils.getFilters(options, queryAux, paramsAux, parameterAux, filterRules);
 
-        query = getFiltersResult.query;
-        params = getFiltersResult.params;
-        parameter = getFiltersResult.parameter;
+    let { query, params, parameter } = getFiltersResult;
 
-        query += " group by 1, 2 order by 1, 2";
+    query += ' group by 1, 2 order by 1, 2';
 
-        // If the 'options.limit' parameter exists, a limit clause is created
-        if(options.limit !== undefined) {
-          query += " limit $" + (parameter++);
-          params.push(options.limit);
-        }
+    // If the 'options.limit' parameter exists, a limit clause is created
+    if (options.limit !== undefined) {
+      query += ` limit $${parameter++}`;
+      params.push(options.limit);
+    }
 
-        // Execution of the query
-        client.query(query, params, function(err, result) {
-          done();
-          if(!err) return callback(null, result);
-          else return callback(err);
-        });
-      } else return callback(err);
-    });
+    // Execution of the query
+    sequelize.query(
+      query,
+      {
+        bind: params,
+        type: sequelize.QueryTypes.SELECT,
+      },
+    ).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 };
 

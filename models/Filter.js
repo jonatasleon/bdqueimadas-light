@@ -1,9 +1,7 @@
-// 'path' module
-const path = require('path');
 // Filter configuration
-const memberFilterConfig = require(path.join(__dirname, '../configurations/Filter.json'));
+const filterConfig = require('../configurations/Filter.json');
 // Tables configuration
-const memberTablesConfig = require(path.join(__dirname, '../configurations/Tables.json'));
+const tablesConfig = require('../configurations/Tables.json');
 // 'Utils' model
 const Utils = require('./Utils.js');
 // PostgreSQL connection pool
@@ -19,8 +17,8 @@ const {
  * @author Jean Souza [jean.souza@funcate.org.br]
  *
  * @property {object} path - 'path' module.
- * @property {json} memberFilterConfig - Filter configuration.
- * @property {json} memberTablesConfig - Tables configuration.
+ * @property {json} filterConfig - Filter configuration.
+ * @property {json} tablesConfig - Tables configuration.
  * @property {object} utils - 'Utils' model.
  * @property {object} pgSequelize - PostgreSQL connection pool.
  */
@@ -52,7 +50,8 @@ function Filter() {
   /**
    * Returns a list of countries.
    * @param {function} callback - Callback function
-   * @returns {function} callback - Execution of the callback function, which will process the received data
+   * @returns {function} callback - Execution of the callback function,
+   * which will process the received data
    *
    * @function getCountries
    * @memberof Filter
@@ -69,7 +68,8 @@ function Filter() {
   /**
    * Returns a list of biomes.
    * @param {function} callback - Callback function
-   * @returns {function} callback - Execution of the callback function, which will process the received data
+   * @returns {function} callback - Execution of the callback function,
+   * which will process the received data
    *
    * @function getBiomes
    * @memberof Filter
@@ -87,7 +87,8 @@ function Filter() {
    * Returns a list of states filtered by the received countries ids.
    * @param {array} countries - Countries ids
    * @param {function} callback - Callback function
-   * @returns {function} callback - Execution of the callback function, which will process the received data
+   * @returns {function} callback - Execution of the callback function,
+   * which will process the received data
    *
    * @function getStatesByCountries
    * @memberof Filter
@@ -113,15 +114,16 @@ function Filter() {
    * Returns the countries extent correspondent to the received ids.
    * @param {array} countries - Countries ids
    * @param {function} callback - Callback function
-   * @returns {function} callback - Execution of the callback function, which will process the received data
+   * @returns {function} callback - Execution of the callback function,
+   * which will process the received data
    *
    * @function getCountriesExtent
    * @memberof Filter
    * @inner
    */
   this.getCountriesExtent = function (countries, callback) {
-    if (countries.length === 1 && memberFilterConfig.Extents.Countries[countries[0]] !== undefined) {
-      const confExtent = memberFilterConfig.Extents.Countries[countries[0]].split(',');
+    if (countries.length === 1 && filterConfig.Extents.Countries[countries[0]] !== undefined) {
+      const confExtent = filterConfig.Extents.Countries[countries[0]].split(',');
       return callback(null, { rowCount: 1, rows: [{ extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})` }] });
     }
 
@@ -129,14 +131,19 @@ function Filter() {
     const countriesWithoutExtent = [];
 
     for (let i = 0, countriesLength = countries.length; i < countriesLength; i++) {
-      if (memberFilterConfig.Extents.Countries[countries[i]] !== undefined) countriesWithExtent.push(countries[i]);
-      else countriesWithoutExtent.push(countries[i]);
+      if (filterConfig.Extents.Countries[countries[i]] !== undefined) {
+        countriesWithExtent.push(countries[i]);
+      } else {
+        countriesWithoutExtent.push(countries[i]);
+      }
     }
 
     let unionGeoms = '';
 
     if (countriesWithExtent.length > 0) {
-      for (let i = 0, countriesWithExtentLength = countriesWithExtent.length; i < countriesWithExtentLength; i++) unionGeoms += `ST_MakeEnvelope(${memberFilterConfig.Extents.Countries[countriesWithExtent[i]]}, 4326), `;
+      for (let i = 0, countriesWithExtentLength = countriesWithExtent.length; i < countriesWithExtentLength; i++) {
+        unionGeoms += `ST_MakeEnvelope(${filterConfig.Extents.Countries[countriesWithExtent[i]]}, 4326), `;
+      }
 
       unionGeoms = unionGeoms.substring(0, (unionGeoms.length - 2));
     }
@@ -149,10 +156,13 @@ function Filter() {
     if (countriesWithoutExtent.length > 0) {
       query = 'select ST_Expand(ST_Extent(';
 
-      if (unionGeoms !== '') query += `ST_Collect(ARRAY[${memberTablesConfig.Countries.GeometryFieldName}, ${unionGeoms}])`;
-      else query += memberTablesConfig.Countries.GeometryFieldName;
+      if (unionGeoms !== '') {
+        query += `ST_Collect(ARRAY[${tablesConfig.Countries.GeometryFieldName}, ${unionGeoms}])`;
+      } else {
+        query += tablesConfig.Countries.GeometryFieldName;
+      }
 
-      query += `), 2) as extent from ${memberTablesConfig.Countries.Schema}.${memberTablesConfig.Countries.TableName} where ${memberTablesConfig.Countries.IdFieldName} in (`;
+      query += `), 2) as extent from ${tablesConfig.Countries.Schema}.${tablesConfig.Countries.TableName} where ${tablesConfig.Countries.IdFieldName} in (`;
 
       for (let i = 0, countriesWithoutExtentLength = countriesWithoutExtent.length; i < countriesWithoutExtentLength; i++) {
         query += `$${parameter++},`;
@@ -160,12 +170,16 @@ function Filter() {
       }
 
       query = `${query.substring(0, (query.length - 1))})`;
-    } else query = `select ST_Expand(ST_Extent(ST_Collect(ARRAY[${unionGeoms}])), 2) as extent`;
-
-    console.log(query);
+    } else {
+      query = `select ST_Expand(ST_Extent(ST_Collect(ARRAY[${unionGeoms}])), 2) as extent`;
+    }
 
     sequelize.query(
-      query, { bind: params, type: sequelize.QueryTypes.SELECT },
+      query,
+      {
+        bind: params,
+        type: sequelize.QueryTypes.SELECT,
+      },
     ).then((result) => {
       callback(null, result);
     }).catch(callback);
@@ -182,24 +196,33 @@ function Filter() {
    * @inner
    */
   this.getStatesExtent = function (states, callback) {
-    if (states.length === 1 && memberFilterConfig.Extents.States[states[0]] !== undefined) {
-      const confExtent = memberFilterConfig.Extents.States[states[0]].split(',');
-      return callback(null, { rowCount: 1, rows: [{ extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})` }] });
+    if (states.length === 1 && filterConfig.Extents.States[states[0]] !== undefined) {
+      const confExtent = filterConfig.Extents.States[states[0]].split(',');
+      return callback(null, {
+        rowCount: 1,
+        rows: [
+          { extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})` }],
+      });
     }
 
     const statesWithExtent = [];
     const statesWithoutExtent = [];
 
     for (let i = 0, statesLength = states.length; i < statesLength; i++) {
-      if (memberFilterConfig.Extents.States[states[i]] !== undefined) statesWithExtent.push(states[i]);
-      else statesWithoutExtent.push(states[i]);
+      if (filterConfig.Extents.States[states[i]] !== undefined) {
+        statesWithExtent.push(states[i]);
+      } else {
+        statesWithoutExtent.push(states[i]);
+      }
     }
 
     let unionGeoms = '';
 
     if (statesWithExtent.length > 0) {
-      for (let i = 0, statesWithExtentLength = statesWithExtent.length; i < statesWithExtentLength; i++) unionGeoms += `ST_MakeEnvelope(${memberFilterConfig.Extents.States[statesWithExtent[i]]}, 4326), `;
-
+      for (let i = 0, statesWithExtentLength = statesWithExtent.length;
+        i < statesWithExtentLength; i += 1) {
+        unionGeoms += `ST_MakeEnvelope(${filterConfig.Extents.States[statesWithExtent[i]]}, 4326), `;
+      }
       unionGeoms = unionGeoms.substring(0, (unionGeoms.length - 2));
     }
 
@@ -211,18 +234,21 @@ function Filter() {
     if (statesWithoutExtent.length > 0) {
       query = 'select ST_Expand(ST_Extent(';
 
-      if (unionGeoms !== '') query += `ST_Collect(ARRAY[${memberTablesConfig.States.GeometryFieldName}, ${unionGeoms}])`;
-      else query += memberTablesConfig.States.GeometryFieldName;
+      if (unionGeoms !== '') query += `ST_Collect(ARRAY[${tablesConfig.States.GeometryFieldName}, ${unionGeoms}])`;
+      else query += tablesConfig.States.GeometryFieldName;
 
-      query += `), 0.5) as extent from ${memberTablesConfig.States.Schema}.${memberTablesConfig.States.TableName} where ${memberTablesConfig.States.IdFieldName} in (`;
+      query += `), 0.5) as extent from ${tablesConfig.States.Schema}.${tablesConfig.States.TableName} where ${tablesConfig.States.IdFieldName} in (`;
 
-      for (let i = 0, statesWithoutExtentLength = statesWithoutExtent.length; i < statesWithoutExtentLength; i++) {
+      for (let i = 0, statesWithoutExtentLength = statesWithoutExtent.length;
+        i < statesWithoutExtentLength; i += 1) {
         query += `$${parameter++},`;
         params.push(statesWithoutExtent[i]);
       }
 
       query = `${query.substring(0, (query.length - 1))})`;
-    } else query = `select ST_Expand(ST_Extent(ST_Collect(ARRAY[${unionGeoms}])), 2) as extent`;
+    } else {
+      query = `select ST_Expand(ST_Extent(ST_Collect(ARRAY[${unionGeoms}])), 2) as extent`;
+    }
 
     sequelize.query(
       query, { bind: params, type: sequelize.QueryTypes.SELECT },
@@ -242,16 +268,23 @@ function Filter() {
    * @inner
    */
   this.getProtectedAreaExtent = function (id, callback) {
-    if (memberFilterConfig.Extents.ProtectedAreas[id.toString()] !== undefined) {
-      const confExtent = memberFilterConfig.Extents.ProtectedAreas[id.toString()].split(',');
-      return callback(null, { rowCount: 1, rows: [{ extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})` }] });
+    if (filterConfig.Extents.ProtectedAreas[id.toString()] !== undefined) {
+      const confExtent = filterConfig.Extents.ProtectedAreas[id.toString()].split(',');
+      return callback(null, {
+        rowCount: 1,
+        rows: [
+          {
+            extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})`,
+          },
+        ],
+      });
     }
 
     const params = [id.toString()];
 
-    const schemaAndTable = `${memberTablesConfig.UCF.Schema}.${memberTablesConfig.UCF.TableName}`;
-    const geom = memberTablesConfig.UCF.GeometryFieldName;
-    const idField = memberTablesConfig.UCF.IdFieldName;
+    const schemaAndTable = `${tablesConfig.UCF.Schema}.${tablesConfig.UCF.TableName}`;
+    const geom = tablesConfig.UCF.GeometryFieldName;
+    const idField = tablesConfig.UCF.IdFieldName;
 
     // Creation of the query
     const query = `select ST_Expand(ST_Extent(${geom}), 0.5) as extent from ${schemaAndTable} where ${idField} = $1;`;
@@ -262,40 +295,32 @@ function Filter() {
         bind: params,
         type: sequelize.QueryTypes.SELECT,
       },
-    );
-    // Connection with the PostgreSQL database
-    pgSequelize.connect((err, client, done) => {
-      if (!err) {
-        // Execution of the query
-        client.query(query, params, (err, result) => {
-          done();
-          if (!err) return callback(null, result);
-          return callback(err);
-        });
-      } else return callback(err);
-    });
+    ).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
    * Returns the extent of the city corresponding to the received id.
    * @param {string} id - Id of the city
    * @param {function} callback - Callback function
-   * @returns {function} callback - Execution of the callback function, which will process the received data
+   * @returns {function} callback - Execution of the callback function,
+   * which will process the received data
    *
    * @function getCityExtent
    * @memberof Filter
    * @inner
    */
   this.getCityExtent = function (id, callback) {
-    if (memberFilterConfig.Extents.Cities[id] !== undefined) {
-      const confExtent = memberFilterConfig.Extents.Cities[id].split(',');
+    if (filterConfig.Extents.Cities[id] !== undefined) {
+      const confExtent = filterConfig.Extents.Cities[id].split(',');
       return callback(null, { rowCount: 1, rows: [{ extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})` }] });
     }
 
     const params = [id];
 
     // Creation of the query
-    const query = `select ST_Expand(ST_Extent(${memberTablesConfig.Cities.GeometryFieldName}), 0.1) as extent from ${memberTablesConfig.Cities.Schema}.${memberTablesConfig.Cities.TableName} where ${memberTablesConfig.Cities.IdFieldName} = $1;`;
+    const query = `select ST_Expand(ST_Extent(${tablesConfig.Cities.GeometryFieldName}), 0.1) as extent from ${tablesConfig.Cities.Schema}.${tablesConfig.Cities.TableName} where ${tablesConfig.Cities.IdFieldName} = $1;`;
 
     sequelize.query(
       query, { bind: params, type: sequelize.QueryTypes.SELECT },
@@ -310,7 +335,8 @@ function Filter() {
    * @param {string} latitude - Latitude of the point
    * @param {float} resolution - Current map resolution
    * @param {function} callback - Callback function
-   * @returns {function} callback - Execution of the callback function, which will process the received data
+   * @returns {function} callback - Execution of the callback function,
+   * which will process the received data
    *
    * @function getDataByIntersection
    * @memberof Filter
@@ -320,13 +346,17 @@ function Filter() {
     // Connection with the PostgreSQL database
     let key = 'States';
 
-    if (resolution >= memberFilterConfig.SpatialFilter.Countries.MinResolution && resolution < memberFilterConfig.SpatialFilter.Countries.MaxResolution) key = 'Countries';
+    if (resolution >= filterConfig.SpatialFilter.Countries.MinResolution
+        && resolution < filterConfig.SpatialFilter.Countries.MaxResolution) {
+      key = 'Countries';
+    }
 
     // Creation of the query
-    const query = `SELECT ${memberTablesConfig[key].IdFieldName} as id, ${memberTablesConfig[key].NameFieldName} as name, '${key}' as key, ${memberTablesConfig[key].BdqNameFieldName} as bdq_name`
-        + ` FROM ${memberTablesConfig[key].Schema}.${memberTablesConfig[key].TableName} WHERE ST_Intersects(${memberTablesConfig[key].GeometryFieldName}, ST_SetSRID(ST_MakePoint($1, $2), 4326));`;
+    const query = `SELECT ${tablesConfig[key].IdFieldName} as id, ${tablesConfig[key].NameFieldName} as name, '${key}' as key, ${tablesConfig[key].BdqNameFieldName} as bdq_name`
+        + ` FROM ${tablesConfig[key].Schema}.${tablesConfig[key].TableName} WHERE ST_Intersects(${tablesConfig[key].GeometryFieldName}, ST_SetSRID(ST_MakePoint($1, $2), 4326));`;
 
     const params = [longitude, latitude];
+
     sequelize.query(
       query, { bind: params, type: sequelize.QueryTypes.SELECT },
     ).then((result) => {
@@ -352,8 +382,8 @@ function Filter() {
     let preParameter = 1;
 
     // Creation of the query
-    const preQuery = `select distinct ${memberTablesConfig.Fires.SatelliteFieldName} from ${memberTablesConfig.Fires.Schema}.${memberTablesConfig.Fires.TableName
-    } where (${memberTablesConfig.Fires.DateTimeFieldName} between $${preParameter++} and $${preParameter++})`;
+    const preQuery = `select distinct ${tablesConfig.Fires.SatelliteFieldName} from ${tablesConfig.Fires.Schema}.${tablesConfig.Fires.TableName
+    } where (${tablesConfig.Fires.DateTimeFieldName} between $${preParameter++} and $${preParameter++})`;
     const preParams = [dateTimeFrom, dateTimeTo];
 
     const getFiltersResult = utils.getFilters(options, preQuery, preParams, preParameter);
@@ -378,9 +408,9 @@ function Filter() {
    */
   this.searchForPAs = function (value, callback) {
     const params = [`%${value}%`];
-    const query = `select ${memberTablesConfig.UCF.IdFieldName} as id, upper(${memberTablesConfig.UCF.NameFieldName}) as name `
-        + `from ${memberTablesConfig.UCF.Schema}.${memberTablesConfig.UCF.TableName
-        } where unaccent(upper(${memberTablesConfig.UCF.NameFieldName})) like unaccent(upper($1))`;
+    const query = `select ${tablesConfig.UCF.IdFieldName} as id, upper(${tablesConfig.UCF.NameFieldName}) as name `
+        + `from ${tablesConfig.UCF.Schema}.${tablesConfig.UCF.TableName
+        } where unaccent(upper(${tablesConfig.UCF.NameFieldName})) like unaccent(upper($1))`;
 
     sequelize.query(
       query, { bind: params, type: sequelize.QueryTypes.SELECT },

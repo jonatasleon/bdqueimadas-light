@@ -1,27 +1,28 @@
+// 'path' module
+const path = require('path');
+// Attributes table configuration
+const attributesTableConfig = require(path.join(__dirname, '../configurations/AttributesTable.json'));
+// Tables configuration
+const tablesConfig = require(path.join(__dirname, '../configurations/Tables.json'));
+// 'Utils' model
+const Utils = require('./Utils.js');
+// PostgreSQL connection pool
+const { sequelize } = require('../pg');
+
 /**
  * AttributesTable model, which contains attributes table related database manipulations.
  * @class AttributesTable
  *
  * @author Jean Souza [jean.souza@funcate.org.br]
  *
- * @property {object} memberPath - 'path' module.
- * @property {json} memberAttributesTableConfig - Attributes table configuration.
- * @property {json} memberTablesConfig - Tables configuration.
- * @property {object} memberUtils - 'Utils' model.
+ * @property {object} path - 'path' module.
+ * @property {json} attributesTableConfig - Attributes table configuration.
+ * @property {json} tablesConfig - Tables configuration.
+ * @property {object} utils - 'Utils' model.
  * @property {object} memberPgPool - PostgreSQL connection pool.
  */
 const AttributesTable = function () {
-  // 'path' module
-  const memberPath = require('path');
-  // Attributes table configuration
-  const memberAttributesTableConfig = require(memberPath.join(__dirname, '../configurations/AttributesTable.json'));
-  // Tables configuration
-  const memberTablesConfig = require(memberPath.join(__dirname, '../configurations/Tables.json'));
-  // 'Utils' model
-  const memberUtils = new (require('./Utils.js'))();
-  // PostgreSQL connection pool
-  const memberPgPool = require('../pg');
-
+  const utils = new Utils();
   /**
    * Returns data of the attributes table accordingly with the received parameters.
    * @param {number} numberOfRegisters - Desired number of records
@@ -32,22 +33,24 @@ const AttributesTable = function () {
    * @param {string} dateTimeTo - Final date / time
    * @param {json} options - Filtering options
    * @param {function} callback - Callback function
-   * @returns {function} callback - Execution of the callback function, which will process the received data
+   * @returns {function} callback - Execution of the callback function,
+   * which will process the received data
    *
    * @function getAttributesTableData
    * @memberof AttributesTable
    * @inner
    */
-  this.getAttributesTableData = function (numberOfRegisters, initialRegister, order, search, dateTimeFrom, dateTimeTo, options, callback) {
+  this.getAttributesTableData = function (numberOfRegisters, initialRegister, order,
+    search, dateTimeFrom, dateTimeTo, options, callback) {
     // Counter of the query parameters
     let parameter = 1;
 
     // Setting of the query columns string
     let columns = '';
-    for (var i = 0, columnsLength = memberAttributesTableConfig.Columns.length; i < columnsLength; i++) {
-      const columnName = (memberAttributesTableConfig.Columns[i].TableAlias !== null ? `${memberAttributesTableConfig.Columns[i].TableAlias}.${memberAttributesTableConfig.Columns[i].Name}` : memberAttributesTableConfig.Columns[i].Name);
+    for (var i = 0, columnsLength = attributesTableConfig.Columns.length; i < columnsLength; i++) {
+      const columnName = (attributesTableConfig.Columns[i].TableAlias !== null ? `${attributesTableConfig.Columns[i].TableAlias}.${attributesTableConfig.Columns[i].Name}` : attributesTableConfig.Columns[i].Name);
 
-      if (memberAttributesTableConfig.Columns[i].Name == memberTablesConfig.Fires.DateTimeFieldName) columns += `TO_CHAR(${columnName}, 'YYYY/MM/DD HH24:MI:SS'), `;
+      if (attributesTableConfig.Columns[i].Name == tablesConfig.Fires.DateTimeFieldName) columns += `TO_CHAR(${columnName}, 'YYYY/MM/DD HH24:MI:SS'), `;
       else columns += `${columnName}, `;
     }
     columns = columns.substring(0, (columns.length - 2));
@@ -58,10 +61,10 @@ const AttributesTable = function () {
       let direction = 'asc';
       if (order[i].dir === 'desc') direction = 'desc';
 
-      let column = memberAttributesTableConfig.Columns[0].Name;
-      for (var j = 0, columnsLength = memberAttributesTableConfig.Columns.length; j < columnsLength; j++) {
-        if (memberAttributesTableConfig.Columns[j].Name === order[i].column) {
-          column = (memberAttributesTableConfig.Columns[j].TableAlias !== null ? `${memberAttributesTableConfig.Columns[j].TableAlias}.${memberAttributesTableConfig.Columns[j].Name}` : memberAttributesTableConfig.Columns[j].Name);
+      let column = attributesTableConfig.Columns[0].Name;
+      for (var j = 0, columnsLength = attributesTableConfig.Columns.length; j < columnsLength; j++) {
+        if (attributesTableConfig.Columns[j].Name === order[i].column) {
+          column = (attributesTableConfig.Columns[j].TableAlias !== null ? `${attributesTableConfig.Columns[j].TableAlias}.${attributesTableConfig.Columns[j].Name}` : attributesTableConfig.Columns[j].Name);
           break;
         }
       }
@@ -70,41 +73,40 @@ const AttributesTable = function () {
     }
     orderText = orderText.substring(0, (orderText.length - 2));
 
-    // Connection with the PostgreSQL database
-    memberPgPool.connect((err, client, done) => {
-      if (!err) {
-        // Creation of the query
-        let query = `select ${columns} from ${memberTablesConfig.Fires.Schema}.${memberTablesConfig.Fires.TableName} FiresTable where (FiresTable.${memberTablesConfig.Fires.DateTimeFieldName} between $${parameter++} and $${parameter++})`;
-        let params = [dateTimeFrom, dateTimeTo];
+    // Creation of the query
+    let query = `select ${columns} from ${tablesConfig.Fires.Schema}.${tablesConfig.Fires.TableName} FiresTable where (FiresTable.${tablesConfig.Fires.DateTimeFieldName} between $${parameter++} and $${parameter++})`;
+    let params = [dateTimeFrom, dateTimeTo];
 
-        options.tableAlias = 'FiresTable';
+    options.tableAlias = 'FiresTable';
 
-        const getFiltersResult = memberUtils.getFilters(options, query, params, parameter);
+    const getFiltersResult = utils.getFilters(options, query, params, parameter);
 
-        query = getFiltersResult.query;
-        params = getFiltersResult.params;
-        parameter = getFiltersResult.parameter;
+    query = getFiltersResult.query;
+    params = getFiltersResult.params;
+    parameter = getFiltersResult.parameter;
 
-        // If the the user executed a search in the table, a 'where' clause is created for it
-        if (search !== '') {
-          const searchResult = createSearch(search, parameter, 'FiresTable');
-          query += searchResult.search;
-          parameter = searchResult.parameter;
-          params = params.concat(searchResult.params);
-        }
+    // If the the user executed a search in the table, a 'where' clause is created for it
+    if (search !== '') {
+      const searchResult = createSearch(search, parameter, 'FiresTable');
+      query += searchResult.search;
+      parameter = searchResult.parameter;
+      params = params.concat(searchResult.params);
+    }
 
-        // Order and pagination clauses
-        query += ` order by ${orderText} limit $${parameter++} offset $${parameter++};`;
-        params.push(numberOfRegisters, initialRegister);
+    // Order and pagination clauses
+    query += ` order by ${orderText} limit $${parameter++} offset $${parameter++};`;
+    params.push(numberOfRegisters, initialRegister);
 
-        // Execution of the query
-        client.query(query, params, (err, result) => {
-          done();
-          if (!err) return callback(null, result);
-          return callback(err);
-        });
-      } else return callback(err);
-    });
+    // Execution of the query
+    sequelize.query(
+      query,
+      {
+        bind: params,
+        type: sequelize.QueryTypes.SELECT,
+      },
+    ).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
@@ -124,26 +126,26 @@ const AttributesTable = function () {
     let parameter = 1;
 
     // Connection with the PostgreSQL database
-    memberPgPool.connect((err, client, done) => {
-      if (!err) {
-        // Creation of the query
-        let query = `select count(*) from ${memberTablesConfig.Fires.Schema}.${memberTablesConfig.Fires.TableName} FiresTable where ${memberTablesConfig.Fires.DateTimeFieldName} between $${parameter++} and $${parameter++}`;
-        let params = [dateTimeFrom, dateTimeTo];
+    // Creation of the query
+    let query = `select count(*) from ${tablesConfig.Fires.Schema}.${tablesConfig.Fires.TableName} FiresTable where ${tablesConfig.Fires.DateTimeFieldName} between $${parameter++} and $${parameter++}`;
+    let params = [dateTimeFrom, dateTimeTo];
 
-        const getFiltersResult = memberUtils.getFilters(options, query, params, parameter);
+    const getFiltersResult = utils.getFilters(options, query, params, parameter);
 
-        query = getFiltersResult.query;
-        params = getFiltersResult.params;
-        parameter = getFiltersResult.parameter;
+    query = getFiltersResult.query;
+    params = getFiltersResult.params;
+    parameter = getFiltersResult.parameter;
 
-        // Execution of the query
-        client.query(query, params, (err, result) => {
-          done();
-          if (!err) return callback(null, result);
-          return callback(err);
-        });
-      } else return callback(err);
-    });
+    // Execution of the query
+    sequelize.query(
+      query,
+      {
+        bind: params,
+        type: sequelize.QueryTypes.SELECT,
+      },
+    ).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
@@ -164,34 +166,34 @@ const AttributesTable = function () {
     let parameter = 1;
 
     // Connection with the PostgreSQL database
-    memberPgPool.connect((err, client, done) => {
-      if (!err) {
-        // Creation of the query
-        let query = `select count(*) from ${memberTablesConfig.Fires.Schema}.${memberTablesConfig.Fires.TableName} FiresTable where ${memberTablesConfig.Fires.DateTimeFieldName} between $${parameter++} and $${parameter++}`;
-        let params = [dateTimeFrom, dateTimeTo];
+    // Creation of the query
+    let query = `select count(*) from ${tablesConfig.Fires.Schema}.${tablesConfig.Fires.TableName} FiresTable where ${tablesConfig.Fires.DateTimeFieldName} between $${parameter++} and $${parameter++}`;
+    let params = [dateTimeFrom, dateTimeTo];
 
-        const getFiltersResult = memberUtils.getFilters(options, query, params, parameter);
+    const getFiltersResult = utils.getFilters(options, query, params, parameter);
 
-        query = getFiltersResult.query;
-        params = getFiltersResult.params;
-        parameter = getFiltersResult.parameter;
+    query = getFiltersResult.query;
+    params = getFiltersResult.params;
+    parameter = getFiltersResult.parameter;
 
-        // If the the user executed a search in the table, a 'where' clause is created for it
-        if (search !== '') {
-          const searchResult = createSearch(search, parameter);
-          query += searchResult.search;
-          parameter = searchResult.parameter;
-          params = params.concat(searchResult.params);
-        }
+    // If the the user executed a search in the table, a 'where' clause is created for it
+    if (search !== '') {
+      const searchResult = createSearch(search, parameter);
+      query += searchResult.search;
+      parameter = searchResult.parameter;
+      params = params.concat(searchResult.params);
+    }
 
-        // Execution of the query
-        client.query(query, params, (err, result) => {
-          done();
-          if (!err) return callback(null, result);
-          return callback(err);
-        });
-      } else return callback(err);
-    });
+    // Execution of the query
+    sequelize.query(
+      query,
+      {
+        bind: params,
+        type: sequelize.QueryTypes.SELECT,
+      },
+    ).then((result) => {
+      callback(null, result);
+    }).catch(callback);
   };
 
   /**
@@ -211,14 +213,14 @@ const AttributesTable = function () {
     const params = [];
 
     // Loop through the columns configuration
-    for (let i = 0, columnsLength = memberAttributesTableConfig.Columns.length; i < columnsLength; i++) {
-      const columnName = (tableAlias !== undefined && tableAlias !== null ? `${tableAlias}.${memberAttributesTableConfig.Columns[i].Name}` : memberAttributesTableConfig.Columns[i].Name);
+    for (let i = 0, columnsLength = attributesTableConfig.Columns.length; i < columnsLength; i++) {
+      const columnName = (tableAlias !== undefined && tableAlias !== null ? `${tableAlias}.${attributesTableConfig.Columns[i].Name}` : attributesTableConfig.Columns[i].Name);
 
       // Verification of the type of the column (numeric or not numeric)
-      if (memberAttributesTableConfig.Columns[i].String) {
+      if (attributesTableConfig.Columns[i].String) {
         searchText += `${columnName} like $${parameter++} or `;
         params.push(`%${search}%`);
-      } else if (!memberAttributesTableConfig.Columns[i].String && !isNaN(search)) {
+      } else if (!attributesTableConfig.Columns[i].String && !isNaN(search)) {
         searchText += `${columnName} = $${parameter++} or `;
         params.push(Number(search));
       }

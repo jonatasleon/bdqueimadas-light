@@ -1,4 +1,19 @@
-"use strict";
+// 'path' module
+const path = require('path');
+// 'pg-format' module
+const pgFormat = require('pg-format');
+// Tables configuration
+const tablesConfig = require(path.join(__dirname, '../configurations/Tables.json'));
+// Attributes table configuration
+const attributesTableConfig = require(path.join(__dirname, '../configurations/AttributesTable.json'));
+// Database configurations
+const databaseConfig = require(path.join(__dirname, '../configurations/Database.json'));
+// Application configurations
+const applicationConfig = require(path.join(__dirname, '../configurations/Application.json'));
+// PostgreSQL connection pool
+const pgPool = require('../pg');
+// 'Utils' model
+const Utils = require('./Utils');
 
 /**
  * Exportation model, which contains exportation related database manipulations.
@@ -15,25 +30,8 @@
  * @property {object} memberUtils - 'Utils' model.
  * @property {object} memberPgPool - PostgreSQL connection pool.
  */
-var Exportation = function() {
-
-  // 'path' module
-  var memberPath = require('path');
-  // 'pg-format' module
-  var memberPgFormat = require('pg-format');
-  // Tables configuration
-  var memberTablesConfig = require(memberPath.join(__dirname, '../configurations/Tables.json'));
-  // Attributes table configuration
-  var memberAttributesTableConfig = require(memberPath.join(__dirname, '../configurations/AttributesTable.json'));
-  // Database configurations
-  var memberDatabaseConfigurations = require(memberPath.join(__dirname, '../configurations/Database.json'));
-  // Application configurations
-  var memberApplicationConfigurations = require(memberPath.join(__dirname, '../configurations/Application.json'));
-  // 'Utils' model
-  var memberUtils = new (require('./Utils.js'))();
-  // PostgreSQL connection pool
-  var memberPgPool = require('../pg');
-
+const Exportation = function () {
+  const utils = new Utils();
   /**
    * Callback of the database operations.
    * @callback Graphics~databaseOperationCallback
@@ -41,7 +39,7 @@ var Exportation = function() {
    * @param {json} result - Result of the operation
    */
 
-   /**
+  /**
     * Returns the PostgreSQL connection string.
     * @returns {string} connectionString - PostgreSQL connection string
     *
@@ -49,13 +47,13 @@ var Exportation = function() {
     * @memberof Exportation
     * @inner
     */
-   this.getPgConnectionString = function() {
-     var connectionString = "PG:host=" + memberDatabaseConfigurations.Host + " port=" + memberDatabaseConfigurations.Port + " user=" + memberDatabaseConfigurations.User + " dbname=" + memberDatabaseConfigurations.Database;
+  this.getPgConnectionString = function () {
+    const connectionString = `PG:host=${databaseConfig.Host} port=${databaseConfig.Port} user=${databaseConfig.User} dbname=${databaseConfig.Database}`;
 
-     return connectionString;
-   };
+    return connectionString;
+  };
 
-   /**
+  /**
     * Returns the ogr2ogr application string.
     * @returns {string} ogr2ogr - ogr2ogr application
     *
@@ -63,11 +61,11 @@ var Exportation = function() {
     * @memberof Exportation
     * @inner
     */
-   this.ogr2ogr = function() {
-     var ogr2ogr = memberApplicationConfigurations.OGR2OGR;
+  this.ogr2ogr = function () {
+    const ogr2ogr = applicationConfig.OGR2OGR;
 
-     return ogr2ogr;
-   };
+    return ogr2ogr;
+  };
 
   /**
    * Returns the fires data in GeoJSON format.
@@ -81,50 +79,47 @@ var Exportation = function() {
    * @memberof Exportation
    * @inner
    */
-  this.getGeoJSONData = function(dateTimeFrom, dateTimeTo, options, callback) {
+  this.getGeoJSONData = function (dateTimeFrom, dateTimeTo, options, callback) {
     // Counter of the query parameters
-    var parameter = 1;
+    let parameterAux = 1;
 
     // Setting of the query columns string
-    var columns = "";
-    for(var i = 0, columnsLength = memberAttributesTableConfig.Columns.length; i < columnsLength; i++) {
-      var columnName = (memberAttributesTableConfig.Columns[i].TableAlias !== null ? memberAttributesTableConfig.Columns[i].TableAlias + "." + memberAttributesTableConfig.Columns[i].Name : memberAttributesTableConfig.Columns[i].Name);
+    let columns = '';
+    for (let i = 0, columnsLength = attributesTableConfig.Columns.length; i < columnsLength; i++) {
+      const columnName = (attributesTableConfig.Columns[i].TableAlias !== null ? `${attributesTableConfig.Columns[i].TableAlias}.${attributesTableConfig.Columns[i].Name}` : attributesTableConfig.Columns[i].Name);
 
-      if(memberAttributesTableConfig.Columns[i].Name !== "geom")
-        columns += columnName + (memberAttributesTableConfig.Columns[i].ExportAlias !== null && memberAttributesTableConfig.Columns[i].ExportAlias !== "" ? " as \"" + memberAttributesTableConfig.Columns[i].ExportAlias + "\", " : ", ");
+      if (attributesTableConfig.Columns[i].Name !== 'geom') columns += columnName + (attributesTableConfig.Columns[i].ExportAlias !== null && attributesTableConfig.Columns[i].ExportAlias !== '' ? ` as "${attributesTableConfig.Columns[i].ExportAlias}", ` : ', ');
     }
     columns = columns.substring(0, (columns.length - 2));
 
     // Connection with the PostgreSQL database
-    memberPgPool.connect(function(err, client, done) {
-      if(!err) {
-
+    pgPool.connect((err, client, done) => {
+      if (!err) {
         // Creation of the query
-        var query = "select ST_AsGeoJSON(" + memberTablesConfig.Fires.GeometryFieldName + ")::json as geometry, row_to_json((select columns from (select " +
-                    columns + ") as columns)) as properties from " + memberTablesConfig.Fires.Schema + "." +
-                    memberTablesConfig.Fires.TableName + " FiresTable where (FiresTable." + memberTablesConfig.Fires.DateTimeFieldName +
-                    " between $" + (parameter++) + " and $" + (parameter++) + ")",
-            params = [dateTimeFrom, dateTimeTo];
+        const queryAux = `select ST_AsGeoJSON(${tablesConfig.Fires.GeometryFieldName})::json as geometry, row_to_json((select columns from (select ${
+          columns}) as columns)) as properties from ${tablesConfig.Fires.Schema}.${
+          tablesConfig.Fires.TableName} FiresTable where (FiresTable.${tablesConfig.Fires.DateTimeFieldName
+        } between $${parameterAux++} and $${parameterAux++})`;
+        const paramsAux = [dateTimeFrom, dateTimeTo];
 
         options.exportFilter = true;
-        options.tableAlias = "FiresTable";
+        options.tableAlias = 'FiresTable';
 
-        var getFiltersResult = memberUtils.getFilters(options, query, params, parameter);
+        const getFiltersResult = utils.getFilters(options, queryAux, paramsAux, parameterAux);
 
-        query = getFiltersResult.query;
-        params = getFiltersResult.params;
-        parameter = getFiltersResult.parameter;
+        let { query } = getFiltersResult;
+        const { params } = getFiltersResult;
 
         // If the 'options.limit' parameter exists, a limit clause is created
-        if(options.limit !== undefined) {
-          query += " limit " + options.limit;
+        if (options.limit !== undefined) {
+          query += ` limit ${options.limit}`;
         }
 
         // Execution of the query
-        client.query(query, params, function(err, result) {
+        client.query(query, params, (err, result) => {
           done();
-          if(!err) return callback(null, result);
-          else return callback(err);
+          if (!err) return callback(null, result);
+          return callback(err);
         });
       } else return callback(err);
     });
@@ -142,51 +137,47 @@ var Exportation = function() {
    * @memberof Exportation
    * @inner
    */
-  this.getQuery = function(selectGeometry, dateTimeFrom, dateTimeTo, options) {
+  this.getQuery = function (selectGeometry, dateTimeFrom, dateTimeTo, options) {
     // Setting of the query columns string
-    var columns = "";
+    let columns = '';
 
-    for(var i = 0, columnsLength = memberAttributesTableConfig.Columns.length; i < columnsLength; i++) {
-      var columnName = (memberAttributesTableConfig.Columns[i].TableAlias !== null ? memberAttributesTableConfig.Columns[i].TableAlias + "." + memberAttributesTableConfig.Columns[i].Name : memberAttributesTableConfig.Columns[i].Name);
-      columnName = (memberAttributesTableConfig.Columns[i].UnaccentAtExportation ? "unaccent(" + columnName + ")" : columnName);
-      var alias = (memberAttributesTableConfig.Columns[i].ExportAlias !== null && memberAttributesTableConfig.Columns[i].ExportAlias !== "" ? " as \"" + memberAttributesTableConfig.Columns[i].ExportAlias + "\"" : " as " + memberAttributesTableConfig.Columns[i].Name);
+    for (let i = 0, columnsLength = attributesTableConfig.Columns.length; i < columnsLength; i++) {
+      let columnName = (attributesTableConfig.Columns[i].TableAlias !== null ? `${attributesTableConfig.Columns[i].TableAlias}.${attributesTableConfig.Columns[i].Name}` : attributesTableConfig.Columns[i].Name);
+      columnName = (attributesTableConfig.Columns[i].UnaccentAtExportation ? `unaccent(${columnName})` : columnName);
+      const alias = (attributesTableConfig.Columns[i].ExportAlias !== null && attributesTableConfig.Columns[i].ExportAlias !== '' ? ` as "${attributesTableConfig.Columns[i].ExportAlias}"` : ` as ${attributesTableConfig.Columns[i].Name}`);
 
-      if(memberAttributesTableConfig.Columns[i].Name !== memberTablesConfig.Fires.GeometryFieldName) {
-        if(memberTablesConfig.Fires.DateTimeFieldName == memberAttributesTableConfig.Columns[i].Name)
-          columns += "TO_CHAR(" + columnName + ", 'YYYY/MM/DD HH24:MI:SS')" + alias + ", ";
-        else
-          columns += columnName + alias + ", ";
+      if (attributesTableConfig.Columns[i].Name !== tablesConfig.Fires.GeometryFieldName) {
+        if (tablesConfig.Fires.DateTimeFieldName == attributesTableConfig.Columns[i].Name) columns += `TO_CHAR(${columnName}, 'YYYY/MM/DD HH24:MI:SS')${alias}, `;
+        else columns += `${columnName + alias}, `;
       }
     }
 
     columns = columns.substring(0, (columns.length - 2));
 
-    if(selectGeometry)
-      columns += ", FiresTable." + memberTablesConfig.Fires.GeometryFieldName;
+    if (selectGeometry) columns += `, FiresTable.${tablesConfig.Fires.GeometryFieldName}`;
 
     // Creation of the query
-    var query = "select " + columns + " from " + memberTablesConfig.Fires.Schema + "." + memberTablesConfig.Fires.TableName + " FiresTable where (FiresTable." + memberTablesConfig.Fires.DateTimeFieldName + " between %L and %L)",
-        params = [dateTimeFrom, dateTimeTo];
+    const queryAux = `select ${columns} from ${tablesConfig.Fires.Schema}.${tablesConfig.Fires.TableName} FiresTable where (FiresTable.${tablesConfig.Fires.DateTimeFieldName} between %L and %L)`;
+    const paramsAux = [dateTimeFrom, dateTimeTo];
 
     options.exportFilter = true;
     options.pgFormatQuery = true;
-    options.tableAlias = "FiresTable";
+    options.tableAlias = 'FiresTable';
 
-    var getFiltersResult = memberUtils.getFilters(options, query, params);
+    const getFiltersResult = utils.getFilters(options, queryAux, paramsAux);
 
-    query = getFiltersResult.query;
-    params = getFiltersResult.params;
+    let { query, params } = getFiltersResult;
 
-    query += " order by FiresTable." + memberTablesConfig.Fires.DateTimeFieldName;
+    query += ` order by FiresTable.${tablesConfig.Fires.DateTimeFieldName}`;
 
     // If the 'options.limit' parameter exists, a limit clause is created
-    if(options.limit !== undefined) {
-      query += " limit " + options.limit;
+    if (options.limit !== undefined) {
+      query += ` limit ${options.limit}`;
     }
 
     params.splice(0, 0, query);
 
-    var finalQuery = memberPgFormat.apply(null, params);
+    const finalQuery = pgFormat(...params);
 
     return finalQuery;
   };
