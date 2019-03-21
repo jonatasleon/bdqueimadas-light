@@ -2,6 +2,7 @@ const fs = require('fs');
 const rimraf = require('rimraf');
 
 const tablesConfig = require('../configurations/Tables.json');
+const { sequelize } = require('../pg');
 
 /**
  * Utilities class of the BDQueimadas (server side).
@@ -30,8 +31,8 @@ const Utils = function () {
    * @memberof Utils
    * @inner
    */
-  this.getFilters = function (options, query_, params, parameter, filterRules) {
-    let query = `${query_}`;
+  this.getFilters = function (options, queryAux, params, parameter, filterRules) {
+    let query = `${queryAux}`;
     // If the 'options.satellites' parameter exists, a satellites 'where' clause is created
     if (options.satellites !== undefined) {
       const satellitesArray = options.satellites.split(',');
@@ -163,6 +164,12 @@ const Utils = function () {
         console.log(e);
       }
     }
+  };
+
+  this.spatialFunctions = {
+    expand(geomCol, unitsToExpand) {
+      return sequelize.fn('ST_Expand', geomCol, unitsToExpand);
+    },
   };
 };
 
