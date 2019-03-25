@@ -64,9 +64,12 @@ const Graphics = function () {
     const queryAux = `select ${fields} from ${tablesConfig.Fires.Schema}.${tablesConfig.Fires.TableName} where (${tablesConfig.Fires.DateTimeFieldName} between $${parameterAux++} and $${parameterAux++})`;
     const paramsAux = [dateTimeFrom, dateTimeTo];
 
-    const getFiltersResult = utils.getFilters(options, queryAux, paramsAux, parameterAux, filterRules);
+    const getFiltersResult = utils.getFilters(
+      options, queryAux, paramsAux, parameterAux, filterRules,
+    );
 
-    let { query, params, parameter } = getFiltersResult;
+    let { query, parameter } = getFiltersResult;
+    const { params } = getFiltersResult;
 
     query += ` group by ${group} order by count desc, ${key} asc`;
 

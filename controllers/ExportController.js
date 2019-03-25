@@ -1,4 +1,9 @@
-"use strict";
+// 'fs' module
+const fs = require('fs');
+// 'path' module
+const path = require('path');
+// 'Utils' model
+const Utils = require('../models/Utils.js');
 
 /**
  * Controller responsible for export the fires data.
@@ -10,35 +15,8 @@
  * @property {object} memberPath - 'path' module.
  * @property {object} memberUtils - 'Utils' model.
  */
-var ExportController = function(app) {
-
-  // 'fs' module
-  var memberFs = require('fs');
-  // 'path' module
-  var memberPath = require('path');
-  // 'Utils' model
-  var memberUtils = new (require('../models/Utils.js'))();
-
-  /**
-   * Processes the request and returns a response.
-   * @param {json} request - JSON containing the request data
-   * @param {json} response - JSON containing the response data
-   *
-   * @function exportController
-   * @memberof ExportController
-   * @inner
-   */
-  var exportController = function(request, response) {
-    var finalPath = memberPath.join(__dirname, '../tmp/' + request.query.folder) + "/" + request.query.file;
-
-    response.download(finalPath, request.query.file, function(err) {
-      if(err) return console.error(err);
-
-      memberUtils.deleteFolderRecursively(memberPath.join(__dirname, '../tmp/' + request.query.folder), function() {});
-    });
-
-    deleteInvalidFolders();
-  };
+const ExportController = function (app) {
+  const utils = new Utils();
 
   /**
    * Returns the difference in days between the current date and a given date.
@@ -50,14 +28,14 @@ var ExportController = function(app) {
    * @memberof ExportController
    * @inner
    */
-  var getDateDifferenceInDays = function(dateString) {
-    var now = new Date();
-    var date = new Date(dateString + " " + now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds());
+  const getDateDifferenceInDays = function (dateString) {
+    const now = new Date();
+    const date = new Date(`${dateString} ${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`);
 
-    var utc1 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-    var utc2 = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+    const utc1 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const utc2 = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
 
-    var difference = Math.floor((utc1 - utc2) / (1000 * 3600 * 24));
+    const difference = Math.floor((utc1 - utc2) / (1000 * 3600 * 24));
 
     return difference;
   };
@@ -70,17 +48,38 @@ var ExportController = function(app) {
    * @memberof ExportController
    * @inner
    */
-  var deleteInvalidFolders = function() {
-    var tmpDir = memberPath.join(__dirname, '../tmp');
-    var dirs = memberFs.readdirSync(tmpDir).filter(file => memberFs.statSync(memberPath.join(tmpDir, file)).isDirectory());
+  const deleteInvalidFolders = function () {
+    const tmpDir = path.join(__dirname, '../tmp');
+    const dirs = fs.readdirSync(tmpDir)
+      .filter(file => fs.statSync(path.join(tmpDir, file)).isDirectory());
 
-    for(var i = 0, count = dirs.length; i < count; i++) {
-      var dir = memberPath.join(__dirname, '../tmp/' + dirs[i]);
-      var date = dirs[i].split('_--_');
+    for (let i = 0, count = dirs.length; i < count; i += 1) {
+      const dir = path.join(__dirname, `../tmp/${dirs[i]}`);
+      const date = dirs[i].split('_--_');
 
-      if(getDateDifferenceInDays(date[1]) > 1)
-        memberUtils.deleteFolderRecursively(dir, function() {});
+      if (getDateDifferenceInDays(date[1]) > 1) utils.deleteFolderRecursively(dir, () => {});
     }
+  };
+
+  /**
+   * Processes the request and returns a response.
+   * @param {json} request - JSON containing the request data
+   * @param {json} response - JSON containing the response data
+   *
+   * @function exportController
+   * @memberof ExportController
+   * @inner
+   */
+  const exportController = function (request, response) {
+    const finalPath = `${path.join(__dirname, `../tmp/${request.query.folder}`)}/${request.query.file}`;
+
+    response.download(finalPath, request.query.file, (err) => {
+      if (err) return console.error(err);
+
+      return utils.deleteFolderRecursively(path.join(__dirname, `../tmp/${request.query.folder}`), () => {});
+    });
+
+    deleteInvalidFolders();
   };
 
   return exportController;

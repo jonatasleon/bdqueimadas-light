@@ -43,7 +43,7 @@ function SearchForCitiesController(app) {
         const data = [];
 
         // Conversion of the result object to array
-        result.rows.forEach((val) => {
+        result.forEach((val) => {
           data.push({
             label: `${val.name} - ${val.state}`,
             value: {

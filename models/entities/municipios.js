@@ -10,9 +10,15 @@ module.exports = (sequelize, DataTypes) => {
       id_0: DataTypes.BIGINT,
       id_1: DataTypes.BIGINT,
       id_2: DataTypes.BIGINT,
+      name: {
+        type: DataTypes.BIGINT,
+        field: 'name_2',
+      },
+      state: {
+        type: DataTypes.BIGINT,
+        field: 'name_1',
+      },
       name_0: DataTypes.STRING,
-      name_1: DataTypes.STRING,
-      name_2: DataTypes.STRING,
       geom: DataTypes.GEOMETRY('MultiPolygon', 4326),
     },
     {
@@ -24,6 +30,10 @@ module.exports = (sequelize, DataTypes) => {
   Municipios.associate = (models) => {
     models.Municipios.belongsTo(models.Estados, {
       foreignKey: 'id_1',
+    });
+
+    models.Municipios.belongsTo(models.Paises, {
+      foreignKey: 'id_0',
     });
   };
 

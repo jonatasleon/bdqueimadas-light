@@ -1400,10 +1400,10 @@ define(
 
         var initialValue = $(statesId).val();
 
-        var statesCount = result.states.rowCount;
+        var statesCount = result.states.length;
 
         for(var i = 0; i < statesCount; i++) {
-          html += "<option value='" + result.states.rows[i].id + "'>" + result.states.rows[i].name + "</option>";
+          html += "<option value='" + result.states[i].id + "'>" + result.states[i].name + "</option>";
         }
 
         $(statesId).empty().html(html);

@@ -412,11 +412,9 @@ function Filter() {
         + `from ${tablesConfig.UCF.Schema}.${tablesConfig.UCF.TableName
         } where unaccent(upper(${tablesConfig.UCF.NameFieldName})) like unaccent(upper($1))`;
 
-    sequelize.query(
+    return sequelize.query(
       query, { bind: params, type: sequelize.QueryTypes.SELECT },
-    ).then((result) => {
-      callback(null, result);
-    }).catch(callback);
+    );
   };
 
 
@@ -432,7 +430,7 @@ function Filter() {
    */
   this.searchForCities = function (value, countries, states, callback) {
     const filters = [];
-    filters.append(Sequelize.where(
+    filters.push(Sequelize.where(
       Sequelize.fn('unaccent', Sequelize.col('name_2')), {
         [Op.iLike]: Sequelize.fn('unaccent', value),
       },
@@ -440,7 +438,7 @@ function Filter() {
 
     if (countries !== null) {
       const countriesArray = countries.split(',');
-      filters.append({
+      filters.push({
         id_0: {
           [Op.in]: countriesArray,
         },
@@ -449,7 +447,7 @@ function Filter() {
 
     if (states !== null) {
       const statesArray = states.split(',');
-      filters.append({
+      filters.push({
         id_1: {
           [Op.in]: statesArray,
         },
@@ -464,7 +462,6 @@ function Filter() {
         },
       ),
     }).then((municipios) => {
-      console.log(municipios);
       callback(null, municipios);
     }).catch(callback);
   };

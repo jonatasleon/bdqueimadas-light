@@ -1,4 +1,8 @@
-"use strict";
+const fs = require('fs');
+const path = require('path');
+const Graphics = require('../models/Graphics.js');
+
+const graphicsConfig = require(path.join(__dirname, '../configurations/Graphics.json'));
 
 /**
  * Controller responsible for export the Graphics data.
@@ -11,17 +15,8 @@
  * @property {object} memberPath - 'path' module.
  * @property {object} memberGraphicsConfigurations - Graphics configuration.
  */
-var ExportGraphicDataController = function(app) {
-
-  // 'Graphics' model
-  var memberGraphics = new (require('../models/Graphics.js'))();
-  // 'fs' module
-  var memberFs = require('fs');
-  // 'path' module
-  var memberPath = require('path');
-  // Graphics configuration
-  var memberGraphicsConfigurations = require(memberPath.join(__dirname, '../configurations/Graphics.json'));
-
+const ExportGraphicDataController = function (app) {
+  const graphics = new Graphics();
   /**
    * Processes the request and returns a response.
    * @param {json} request - JSON containing the request data
@@ -31,45 +26,44 @@ var ExportGraphicDataController = function(app) {
    * @memberof ExportGraphicDataController
    * @inner
    */
-  var exportGraphicDataController = function(request, response) {
-
+  const exportGraphicDataController = function (request, response) {
     // Object responsible for keeping several information to be used in the database query
-    var options = {};
+    const options = {};
 
     // Verifications of the 'options' object items
-    if(request.query.satellites !== '') options.satellites = request.query.satellites;
-    if(request.query.biomes !== '') options.biomes = request.query.biomes;
-    if(request.query.countries !== '') options.countries = request.query.countries;
-    if(request.query.states !== '') options.states = request.query.states;
-    if(request.query.cities !== '') options.cities = request.query.cities;
+    if (request.query.satellites !== '') options.satellites = request.query.satellites;
+    if (request.query.biomes !== '') options.biomes = request.query.biomes;
+    if (request.query.countries !== '') options.countries = request.query.countries;
+    if (request.query.states !== '') options.states = request.query.states;
+    if (request.query.cities !== '') options.cities = request.query.cities;
 
-    var graphicConfigurations = getGraphicConfigurations(request.query.id);
+    const graphicConfigurations = getGraphicConfigurations(request.query.id);
 
-    if(graphicConfigurations.Limit !== null) options.limit = graphicConfigurations.Limit;
+    if (graphicConfigurations.Limit !== null) options.limit = graphicConfigurations.Limit;
     options.y = graphicConfigurations.Y;
 
-    var filterRules = {
+    const filterRules = {
       ignoreCountryFilter: graphicConfigurations.IgnoreCountryFilter,
       ignoreStateFilter: graphicConfigurations.IgnoreStateFilter,
       ignoreCityFilter: graphicConfigurations.IgnoreCityFilter,
       showOnlyIfThereIsACountryFiltered: graphicConfigurations.ShowOnlyIfThereIsACountryFiltered,
       showOnlyIfThereIsNoCountryFiltered: graphicConfigurations.ShowOnlyIfThereIsNoCountryFiltered,
       showOnlyIfThereIsAStateFiltered: graphicConfigurations.ShowOnlyIfThereIsAStateFiltered,
-      showOnlyIfThereIsNoStateFiltered: graphicConfigurations.ShowOnlyIfThereIsNoStateFiltered
+      showOnlyIfThereIsNoStateFiltered: graphicConfigurations.ShowOnlyIfThereIsNoStateFiltered,
     };
 
-    memberGraphics.getFiresTotalCount(request.query.dateTimeFrom, request.query.dateTimeTo, filterRules, options, function(err, firesTotalCount) {
-      if(err) return console.error(err);
+    graphics.getFiresTotalCount(request.query.dateTimeFrom, request.query.dateTimeTo, filterRules, options, (err, firesTotalCount) => {
+      if (err) return console.error(err);
 
-      if(graphicConfigurations.Key === "week") {
-        memberGraphics.getFiresCountByWeek(request.query.dateTimeFrom, request.query.dateTimeTo, filterRules, options, function(err, firesCount) {
-          if(err) return console.error(err);
+      if (graphicConfigurations.Key === 'week') {
+        graphics.getFiresCountByWeek(request.query.dateTimeFrom, request.query.dateTimeTo, filterRules, options, (err, firesCount) => {
+          if (err) return console.error(err);
 
           downloadCsvFiresCount(firesTotalCount, firesCount, graphicConfigurations.Y, graphicConfigurations.Key, request.query.dateTimeFrom, request.query.dateTimeTo, response);
         });
       } else {
-        memberGraphics.getFiresCount(request.query.dateTimeFrom, request.query.dateTimeTo, graphicConfigurations.Key, filterRules, options, function(err, firesCount) {
-          if(err) return console.error(err);
+        graphics.getFiresCount(request.query.dateTimeFrom, request.query.dateTimeTo, graphicConfigurations.Key, filterRules, options, (err, firesCount) => {
+          if (err) return console.error(err);
 
           downloadCsvFiresCount(firesTotalCount, firesCount, graphicConfigurations.Y, graphicConfigurations.Key, request.query.dateTimeFrom, request.query.dateTimeTo, response);
         });
@@ -92,20 +86,20 @@ var ExportGraphicDataController = function(app) {
    * @memberof ExportGraphicDataController
    * @inner
    */
-  var downloadCsvFiresCount = function(firesTotalCount, firesCount, y, key, dateTimeFrom, dateTimeTo, response) {
-    var csv = createCsvFiresCount(firesTotalCount, firesCount, y);
-    var path = require('path');
+  var downloadCsvFiresCount = function (firesTotalCount, firesCount, y, key, dateTimeFrom, dateTimeTo, response) {
+    const csv = createCsvFiresCount(firesTotalCount, firesCount, y);
+    const path = require('path');
 
-    require('crypto').randomBytes(24, function(err, buffer) {
-      var csvPath = path.join(__dirname, '../tmp/graphic-csv-' + buffer.toString('hex') + '.csv');
+    require('crypto').randomBytes(24, (err, buffer) => {
+      const csvPath = path.join(__dirname, `../tmp/graphic-csv-${buffer.toString('hex')}.csv`);
 
-      memberFs.writeFile(csvPath, csv, 'ascii', function(err) {
-        if(err) return console.error(err);
+      fs.writeFile(csvPath, csv, 'ascii', (err) => {
+        if (err) return console.error(err);
 
-        response.download(csvPath, 'Focos por ' + key + ' - de ' + dateTimeFrom + ' a ' + dateTimeTo + '.csv', function(err) {
-          if(err) return console.error(err);
+        response.download(csvPath, `Focos por ${key} - de ${dateTimeFrom} a ${dateTimeTo}.csv`, (err) => {
+          if (err) return console.error(err);
 
-          memberFs.unlink(csvPath);
+          fs.unlink(csvPath);
         });
       });
     });
@@ -122,20 +116,20 @@ var ExportGraphicDataController = function(app) {
    * @memberof ExportGraphicDataController
    * @inner
    */
-  var createCsvFiresCount = function(firesTotalCount, firesCount, y) {
-    var csv = "Campo,Valor,Percentagem do Total de Focos\n";
-    var yFields = y.match(/[^{\}]+(?=})/g);
+  var createCsvFiresCount = function (firesTotalCount, firesCount, y) {
+    let csv = 'Campo,Valor,Percentagem do Total de Focos\n';
+    const yFields = y.match(/[^{\}]+(?=})/g);
 
-    firesCount.rows.forEach(function(item) {
-      var label = y;
+    firesCount.rows.forEach((item) => {
+      let label = y;
 
-      for(var i = 0, count = yFields.length; i < count; i++) {
-        var field = (item[yFields[i]] !== null && item[yFields[i]] !== undefined && item[yFields[i]] !== "" ? item[yFields[i]]: "Não Identificado");
+      for (let i = 0, count = yFields.length; i < count; i++) {
+        const field = (item[yFields[i]] !== null && item[yFields[i]] !== undefined && item[yFields[i]] !== '' ? item[yFields[i]] : 'Não Identificado');
 
-        label = label.replace("{" + yFields[i] + "}", field);
+        label = label.replace(`{${yFields[i]}}`, field);
       }
 
-      csv += label + ',' + item.count + ',' + ((parseFloat(item.count) / parseFloat(firesTotalCount.rows[0].count)) * 100).toFixed(2) + '%\n';
+      csv += `${label},${item.count},${((parseFloat(item.count) / parseFloat(firesTotalCount.rows[0].count)) * 100).toFixed(2)}%\n`;
     });
 
     return csv;
@@ -151,10 +145,10 @@ var ExportGraphicDataController = function(app) {
    * @memberof ExportGraphicDataController
    * @inner
    */
-  var getGraphicConfigurations = function(id) {
-    for(var i = 0, count = memberGraphicsConfigurations.FiresCount.length; i < count; i++) {
-      if(id === memberGraphicsConfigurations.FiresCount[i].Id) {
-        return memberGraphicsConfigurations.FiresCount[i];
+  var getGraphicConfigurations = function (id) {
+    for (let i = 0, count = graphicsConfig.FiresCount.length; i < count; i++) {
+      if (id === graphicsConfig.FiresCount[i].Id) {
+        return graphicsConfig.FiresCount[i];
       }
     }
   };
