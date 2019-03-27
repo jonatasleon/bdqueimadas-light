@@ -1,5 +1,4 @@
-"use strict";
-
+const FilterModels = require('../models/Filter.js');
 /**
  * Socket responsible for processing filter related requests.
  * @class Filter
@@ -10,90 +9,84 @@
  * @property {object} memberSockets - Sockets object.
  * @property {object} memberFilter - Filter model.
  */
-var Filter = function(io) {
-
+const Filter = function (io) {
   // Sockets object
-  var memberSockets = io.sockets;
+  const { sockets } = io;
   // Filter model
-  var memberFilter = new (require('../models/Filter.js'))();
+  const filterModels = new FilterModels();
 
   // Socket connection event
-  memberSockets.on('connection', function(client) {
+  sockets.on('connection', (client) => {
     // Spatial filter request event
-    client.on('spatialFilterRequest', function(json) {
-      if(json.key === 'States' && json.ids.length > 0) {
-        memberFilter.getStatesExtent(json.ids, function(err, extent) {
-          if(err) return console.error(err);
-
-          client.emit('spatialFilterResponse', { key: json.key, ids: json.ids, extent: extent });
-        });
-      } else if(json.key === 'ProtectedArea') {
-        memberFilter.getProtectedAreaExtent(json.id, function(err, extent) {
-          if(err) return console.error(err);
-
-          client.emit('spatialFilterResponse', { key: json.key, id: json.id, extent: extent });
-        });
-      } else if(json.key === 'City') {
-        memberFilter.getCityExtent(json.id, function(err, extent) {
-          if(err) return console.error(err);
-
-          client.emit('spatialFilterResponse', { key: json.key, id: json.id, extent: extent });
-        });
+    client.on('spatialFilterRequest', (json) => {
+      if (json.key === 'States' && json.ids.length > 0) {
+        filterModels.getStatesExtent(json.ids)
+          .then((extent) => {
+            client.emit('spatialFilterResponse', { key: json.key, ids: json.ids, extent });
+          }).catch(console.error);
+      } else if (json.key === 'ProtectedArea') {
+        filterModels.getProtectedAreaExtent(json.id)
+          .then((extent) => {
+            client.emit('spatialFilterResponse', { key: json.key, id: json.id, extent });
+          }).catch(console.error);
+      } else if (json.key === 'City') {
+        filterModels.getCityExtent(json.id)
+          .then((err, extent) => {
+            client.emit('spatialFilterResponse', { key: json.key, id: json.id, extent });
+          }).catch(console.error);
       } else {
-        var functionName = "get" + json.key + "Extent";
-        memberFilter[functionName](json.ids, function(err, extent) {
-          if(err) return console.error(err);
+        const functionName = `get${json.key}Extent`;
+        filterModels[functionName](json.ids, (err, extent) => {
+          if (err) return console.error(err);
 
-          client.emit('spatialFilterResponse', { key: json.key, ids: json.ids, extent: extent });
+          client.emit('spatialFilterResponse', { key: json.key, ids: json.ids, extent });
         });
       }
     });
 
     // Data by intersection request event
-    client.on('dataByIntersectionRequest', function(json) {
-      memberFilter.getDataByIntersection(json.longitude, json.latitude, json.resolution, function(err, data) {
-        if(err) return console.error(err);
-
-        client.emit('dataByIntersectionResponse', { data: data });
-      });
+    client.on('dataByIntersectionRequest', (json) => {
+      filterModels.getDataByIntersection(json.longitude, json.latitude, json.resolution)
+        .then((data) => {
+          client.emit('dataByIntersectionResponse', { data });
+        }).catch(console.error);
     });
 
     // Country by state request event
-    client.on('countriesByStatesRequest', function(json) {
-      memberFilter.getCountriesByStates(json.states, function(err, countriesByStates) {
-        if(err) return console.error(err);
+    client.on('countriesByStatesRequest', (json) => {
+      filterModels.getCountriesByStates(json.states, (err, countriesByStates) => {
+        if (err) return console.error(err);
 
-        client.emit('countriesByStatesResponse', { countriesByStates: countriesByStates });
+        client.emit('countriesByStatesResponse', { countriesByStates });
       });
     });
 
     // States by countries request event
-    client.on('statesByCountriesRequest', function(json) {
-      memberFilter.getStatesByCountries(json.countries, function(err, states) {
-        if(err) return console.error(err);
+    client.on('statesByCountriesRequest', (json) => {
+      filterModels.getStatesByCountries(json.countries, (err, states) => {
+        if (err) return console.error(err);
 
-        client.emit('statesByCountriesResponse', { states: states, filter: json.filter });
+        client.emit('statesByCountriesResponse', { states, filter: json.filter });
       });
     });
 
     // Get satellites request event
-    client.on('getSatellitesRequest', function(json) {
+    client.on('getSatellitesRequest', (json) => {
       // Object responsible for keep several information to be used in the database query
-      var options = {};
+      const options = {};
 
       // Verifications of the 'options' object items
-      if(json.satellites !== '') options.satellites = json.satellites;
-      if(json.biomes !== '') options.biomes = json.biomes;
-      if(json.extent !== '') options.extent = json.extent;
-      if(json.countries !== null && json.countries !== '') options.countries = json.countries;
-      if(json.states !== null && json.states !== '') options.states = json.states;
-      if(json.cities !== undefined && json.cities !== null && json.cities !== '') options.cities = json.cities;
+      if (json.satellites !== '') options.satellites = json.satellites;
+      if (json.biomes !== '') options.biomes = json.biomes;
+      if (json.extent !== '') options.extent = json.extent;
+      if (json.countries !== null && json.countries !== '') options.countries = json.countries;
+      if (json.states !== null && json.states !== '') options.states = json.states;
+      if (json.cities !== undefined && json.cities !== null && json.cities !== '') options.cities = json.cities;
 
-      memberFilter.getSatellites(json.dateTimeFrom, json.dateTimeTo, options, function(err, satellitesList) {
-        if(err) return console.error(err);
-
-        client.emit('getSatellitesResponse', { satellitesList: satellitesList });
-      });
+      filterModels.getSatellites(json.dateTimeFrom, json.dateTimeTo, options)
+        .then((err, satellitesList) => {
+          client.emit('getSatellitesResponse', { satellitesList });
+        }).catch(console.error);
     });
   });
 };
