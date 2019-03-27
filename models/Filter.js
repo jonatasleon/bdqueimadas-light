@@ -51,49 +51,45 @@ function Filter() {
    * Returns a list of countries.
    * @param {function} callback - Callback function
    * @returns {function} callback - Execution of the callback function,
-   * which will process the received data
-   *
-   * @function getCountries
-   * @memberof Filter
-   * @inner
-   */
-  this.getCountries = function (callback) {
-    Paises.findAll({
+     * which will process the received data
+     *
+     * @function getCountries
+     * @memberof Filter
+     * @inner
+     */
+  this.getCountries = function () {
+    return Paises.findAll({
       order: [['id_0', 'ASC']],
-    }).then((result) => {
-      callback(null, result);
-    }).catch(callback);
+    });
   };
 
   /**
-   * Returns a list of biomes.
-   * @param {function} callback - Callback function
-   * @returns {function} callback - Execution of the callback function,
-   * which will process the received data
-   *
-   * @function getBiomes
-   * @memberof Filter
-   * @inner
-   */
-  this.getBiomes = function (callback) {
-    Biomas.findAll({
+     * Returns a list of biomes.
+     * @param {function} callback - Callback function
+     * @returns {function} callback - Execution of the callback function,
+     * which will process the received data
+     *
+     * @function getBiomes
+     * @memberof Filter
+     * @inner
+     */
+  this.getBiomes = function () {
+    return Biomas.findAll({
       order: [['nome', 'ASC']],
-    }).then((result) => {
-      callback(null, result);
-    }).catch(callback);
+    });
   };
 
   /**
-   * Returns a list of states filtered by the received countries ids.
-   * @param {array} countries - Countries ids
-   * @param {function} callback - Callback function
-   * @returns {function} callback - Execution of the callback function,
-   * which will process the received data
-   *
-   * @function getStatesByCountries
-   * @memberof Filter
-   * @inner
-   */
+     * Returns a list of states filtered by the received countries ids.
+     * @param {array} countries - Countries ids
+     * @param {function} callback - Callback function
+     * @returns {function} callback - Execution of the callback function,
+     * which will process the received data
+     *
+     * @function getStatesByCountries
+     * @memberof Filter
+     * @inner
+     */
   this.getStatesByCountries = function (countries, callback) {
     Estados.findAll({
       where: {
@@ -111,16 +107,16 @@ function Filter() {
   };
 
   /**
-   * Returns the countries extent correspondent to the received ids.
-   * @param {array} countries - Countries ids
-   * @param {function} callback - Callback function
-   * @returns {function} callback - Execution of the callback function,
-   * which will process the received data
-   *
-   * @function getCountriesExtent
-   * @memberof Filter
-   * @inner
-   */
+     * Returns the countries extent correspondent to the received ids.
+     * @param {array} countries - Countries ids
+     * @param {function} callback - Callback function
+     * @returns {function} callback - Execution of the callback function,
+     * which will process the received data
+     *
+     * @function getCountriesExtent
+     * @memberof Filter
+     * @inner
+     */
   this.getCountriesExtent = function (countries, callback) {
     if (countries.length === 1 && filterConfig.Extents.Countries[countries[0]] !== undefined) {
       const confExtent = filterConfig.Extents.Countries[countries[0]].split(',');
@@ -186,15 +182,15 @@ function Filter() {
   };
 
   /**
-   * Returns the states extent correspondent to the received ids.
-   * @param {array} states - States ids
-   * @param {function} callback - Callback function
-   * @returns {function} callback - Execution of the callback function, which will process the received data
-   *
-   * @function getStatesExtent
-   * @memberof Filter
-   * @inner
-   */
+     * Returns the states extent correspondent to the received ids.
+     * @param {array} states - States ids
+     * @param {function} callback - Callback function
+     * @returns {function} callback - Execution of the callback function, which will process the received data
+     *
+     * @function getStatesExtent
+     * @memberof Filter
+     * @inner
+     */
   this.getStatesExtent = function (states, callback) {
     if (states.length === 1 && filterConfig.Extents.States[states[0]] !== undefined) {
       const confExtent = filterConfig.Extents.States[states[0]].split(',');
@@ -258,15 +254,15 @@ function Filter() {
   };
 
   /**
-   * Returns the extent of the protected area corresponding to the received id.
-   * @param {integer} id - Id of the protected area
-   * @param {function} callback - Callback function
-   * @returns {function} callback - Execution of the callback function, which will process the received data
-   *
-   * @function getProtectedAreaExtent
-   * @memberof Filter
-   * @inner
-   */
+     * Returns the extent of the protected area corresponding to the received id.
+     * @param {integer} id - Id of the protected area
+     * @param {function} callback - Callback function
+     * @returns {function} callback - Execution of the callback function, which will process the received data
+     *
+     * @function getProtectedAreaExtent
+     * @memberof Filter
+     * @inner
+     */
   this.getProtectedAreaExtent = function (id, callback) {
     if (filterConfig.Extents.ProtectedAreas[id.toString()] !== undefined) {
       const confExtent = filterConfig.Extents.ProtectedAreas[id.toString()].split(',');
@@ -301,16 +297,16 @@ function Filter() {
   };
 
   /**
-   * Returns the extent of the city corresponding to the received id.
-   * @param {string} id - Id of the city
-   * @param {function} callback - Callback function
-   * @returns {function} callback - Execution of the callback function,
-   * which will process the received data
-   *
-   * @function getCityExtent
-   * @memberof Filter
-   * @inner
-   */
+     * Returns the extent of the city corresponding to the received id.
+     * @param {string} id - Id of the city
+     * @param {function} callback - Callback function
+     * @returns {function} callback - Execution of the callback function,
+     * which will process the received data
+     *
+     * @function getCityExtent
+     * @memberof Filter
+     * @inner
+     */
   this.getCityExtent = function (id, callback) {
     if (filterConfig.Extents.Cities[id] !== undefined) {
       const confExtent = filterConfig.Extents.Cities[id].split(',');
@@ -330,19 +326,17 @@ function Filter() {
   };
 
   /**
-   * Returns the data of the polygon that intersects with the received point.
-   * @param {string} longitude - Longitude of the point
-   * @param {string} latitude - Latitude of the point
-   * @param {float} resolution - Current map resolution
-   * @param {function} callback - Callback function
-   * @returns {function} callback - Execution of the callback function,
-   * which will process the received data
-   *
-   * @function getDataByIntersection
+     * Returns the a promise of data of the polygon that intersects with the received point.
+     * @param {string} longitude - Longitude of the point
+     * @param {string} latitude - Latitude of the point
+     * @param {float} resolution - Current map resolution
+     * @param {function} callback - Callback function
+     *
+     * @function getDataByIntersection
    * @memberof Filter
    * @inner
    */
-  this.getDataByIntersection = function (longitude, latitude, resolution, callback) {
+  this.getDataByIntersection = function (longitude, latitude, resolution) {
     // Connection with the PostgreSQL database
     let key = 'States';
 
@@ -357,11 +351,9 @@ function Filter() {
 
     const params = [longitude, latitude];
 
-    sequelize.query(
+    return sequelize.query(
       query, { bind: params, type: sequelize.QueryTypes.SELECT },
-    ).then((result) => {
-      callback(null, result);
-    }).catch(callback);
+    );
   };
 
   /**

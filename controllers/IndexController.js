@@ -1,4 +1,9 @@
-"use strict";
+// 'path' module
+const path = require('path');
+// 'fs' module
+const fs = require('fs');
+// Filter model
+const Filter = require('../models/Filter.js');
 
 /**
  * Controller of the system index.
@@ -10,15 +15,8 @@
  * @property {object} memberFs - 'fs' module.
  * @property {object} memberFilter - Filter model.
  */
-var IndexController = function(app) {
-
-  // 'path' module
-  var memberPath = require('path');
-  // 'fs' module
-  var memberFs = require('fs');
-  // Filter model
-  var memberFilter = new (require('../models/Filter.js'))();
-
+const IndexController = function (app) {
+  const filter = new Filter();
   /**
    * Processes the request and returns a response.
    * @param {json} request - JSON containing the request data
@@ -28,42 +26,40 @@ var IndexController = function(app) {
    * @memberof IndexController
    * @inner
    */
-  var indexController = function(request, response) {
-
+  const indexController = function (request, response) {
     // Load of the configuration files to be sent to the front end
-    var filterConfigurations = JSON.parse(memberFs.readFileSync(memberPath.join(__dirname, '../configurations/Filter.json'), 'utf8')),
-        attributesTableConfigurations = JSON.parse(memberFs.readFileSync(memberPath.join(__dirname, '../configurations/AttributesTable.json'), 'utf8')),
-        mapConfigurations = JSON.parse(memberFs.readFileSync(memberPath.join(__dirname, '../configurations/Map.json'), 'utf8')),
-        graphicsConfigurations = JSON.parse(memberFs.readFileSync(memberPath.join(__dirname, '../configurations/Graphics.json'), 'utf8')),
-        applicationConfigurations = JSON.parse(memberFs.readFileSync(memberPath.join(__dirname, '../configurations/Application.json'), 'utf8')),
-        tablesConfigurations = JSON.parse(memberFs.readFileSync(memberPath.join(__dirname, '../configurations/Tables.json'), 'utf8'));
+    const filterConfigurations = JSON.parse(fs.readFileSync(path.join(__dirname, '../configurations/Filter.json'), 'utf8'));
+    const attributesTableConfigurations = JSON.parse(fs.readFileSync(path.join(__dirname, '../configurations/AttributesTable.json'), 'utf8'));
+    const mapConfigurations = JSON.parse(fs.readFileSync(path.join(__dirname, '../configurations/Map.json'), 'utf8'));
+    const graphicsConfigurations = JSON.parse(fs.readFileSync(path.join(__dirname, '../configurations/Graphics.json'), 'utf8'));
+    const applicationConfigurations = JSON.parse(fs.readFileSync(path.join(__dirname, '../configurations/Application.json'), 'utf8'));
+    const tablesConfigurations = JSON.parse(fs.readFileSync(path.join(__dirname, '../configurations/Tables.json'), 'utf8'));
 
-    var configurations = {
-      filterConfigurations: filterConfigurations,
-      attributesTableConfigurations: attributesTableConfigurations,
-      mapConfigurations: mapConfigurations,
-      graphicsConfigurations: graphicsConfigurations,
-      applicationConfigurations: applicationConfigurations,
-      firesDateFormat: tablesConfigurations.Fires.DateFormat
+    const configurations = {
+      filterConfigurations,
+      attributesTableConfigurations,
+      mapConfigurations,
+      graphicsConfigurations,
+      applicationConfigurations,
+      firesDateFormat: tablesConfigurations.Fires.DateFormat,
     };
 
-    memberFilter.getCountries(function(err, result) {
-      if(err) return console.error(err);
+    filter.getCountries()
+      .then((result) => {
+        filter.getBiomes()
+          .then((resultBiomes) => {
+            // Response parameters
+            const params = {
+              countries: result,
+              biomes: resultBiomes,
+              configurations,
+            };
 
-      memberFilter.getBiomes(function(err, resultBiomes) {
-        if(err) return console.error(err);
-
-        // Response parameters
-        var params = {
-          countries: result,
-          biomes: resultBiomes,
-          configurations: configurations,
-        };
-
-        // Response (page rendering)
-        response.render('index', params);
-      });
-    });
+            // Response (page rendering)
+            response.render('index', params);
+          })
+          .catch(console.error);
+      }).catch(console.error);
   };
 
   return indexController;
