@@ -191,13 +191,19 @@ function Filter() {
      * @memberof Filter
      * @inner
      */
-  this.getStatesExtent = function (states, callback) {
+  this.getStatesExtent = function (states) {
     if (states.length === 1 && filterConfig.Extents.States[states[0]] !== undefined) {
       const confExtent = filterConfig.Extents.States[states[0]].split(',');
-      return callback(null, {
+      const result = {
         rowCount: 1,
         rows: [
-          { extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})` }],
+          {
+            extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})`,
+          },
+        ],
+      };
+      return new Promise((resolve) => {
+        resolve(result);
       });
     }
 
@@ -246,11 +252,9 @@ function Filter() {
       query = `select ST_Expand(ST_Extent(ST_Collect(ARRAY[${unionGeoms}])), 2) as extent`;
     }
 
-    sequelize.query(
+    return sequelize.query(
       query, { bind: params, type: sequelize.QueryTypes.SELECT },
-    ).then((result) => {
-      callback(null, result);
-    }).catch(callback);
+    );
   };
 
   /**
@@ -266,13 +270,16 @@ function Filter() {
   this.getProtectedAreaExtent = function (id, callback) {
     if (filterConfig.Extents.ProtectedAreas[id.toString()] !== undefined) {
       const confExtent = filterConfig.Extents.ProtectedAreas[id.toString()].split(',');
-      return callback(null, {
+      const result = {
         rowCount: 1,
         rows: [
           {
             extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})`,
           },
         ],
+      };
+      return new Promise((resolve) => {
+        resolve(result);
       });
     }
 
@@ -285,15 +292,13 @@ function Filter() {
     // Creation of the query
     const query = `select ST_Expand(ST_Extent(${geom}), 0.5) as extent from ${schemaAndTable} where ${idField} = $1;`;
 
-    sequelize.query(
+    return sequelize.query(
       query,
       {
         bind: params,
         type: sequelize.QueryTypes.SELECT,
       },
-    ).then((result) => {
-      callback(null, result);
-    }).catch(callback);
+    );
   };
 
   /**
@@ -307,10 +312,13 @@ function Filter() {
      * @memberof Filter
      * @inner
      */
-  this.getCityExtent = function (id, callback) {
+  this.getCityExtent = function (id) {
     if (filterConfig.Extents.Cities[id] !== undefined) {
       const confExtent = filterConfig.Extents.Cities[id].split(',');
-      return callback(null, { rowCount: 1, rows: [{ extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})` }] });
+      const result = { rowCount: 1, rows: [{ extent: `BOX(${confExtent[0]} ${confExtent[1]},${confExtent[2]} ${confExtent[3]})` }] };
+      return new Promise((resolve) => {
+        resolve(result);
+      });
     }
 
     const params = [id];
@@ -318,11 +326,9 @@ function Filter() {
     // Creation of the query
     const query = `select ST_Expand(ST_Extent(${tablesConfig.Cities.GeometryFieldName}), 0.1) as extent from ${tablesConfig.Cities.Schema}.${tablesConfig.Cities.TableName} where ${tablesConfig.Cities.IdFieldName} = $1;`;
 
-    sequelize.query(
+    return sequelize.query(
       query, { bind: params, type: sequelize.QueryTypes.SELECT },
-    ).then((result) => {
-      callback(null, result);
-    }).catch(callback);
+    );
   };
 
   /**
@@ -330,7 +336,6 @@ function Filter() {
      * @param {string} longitude - Longitude of the point
      * @param {string} latitude - Latitude of the point
      * @param {float} resolution - Current map resolution
-     * @param {function} callback - Callback function
      *
      * @function getDataByIntersection
    * @memberof Filter
@@ -368,7 +373,7 @@ function Filter() {
    * @memberof Filter
    * @inner
    */
-  this.getSatellites = function (dateTimeFrom, dateTimeTo, options, callback) {
+  this.getSatellites = function (dateTimeFrom, dateTimeTo, options) {
     // Connection with the PostgreSQL database
     // Counter of the query parameters
     let preParameter = 1;
@@ -381,11 +386,9 @@ function Filter() {
     const getFiltersResult = utils.getFilters(options, preQuery, preParams, preParameter);
     const { query, params } = getFiltersResult;
 
-    sequelize.query(
+    return sequelize.query(
       query, { bind: params, type: sequelize.QueryTypes.SELECT },
-    ).then((result) => {
-      callback(null, result);
-    }).catch(callback);
+    );
   };
 
   /**

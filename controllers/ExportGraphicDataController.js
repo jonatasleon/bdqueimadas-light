@@ -120,7 +120,7 @@ const ExportGraphicDataController = function (app) {
     let csv = 'Campo,Valor,Percentagem do Total de Focos\n';
     const yFields = y.match(/[^{\}]+(?=})/g);
 
-    firesCount.rows.forEach((item) => {
+    firesCount.forEach((item) => {
       let label = y;
 
       for (let i = 0, count = yFields.length; i < count; i++) {
@@ -129,7 +129,7 @@ const ExportGraphicDataController = function (app) {
         label = label.replace(`{${yFields[i]}}`, field);
       }
 
-      csv += `${label},${item.count},${((parseFloat(item.count) / parseFloat(firesTotalCount.rows[0].count)) * 100).toFixed(2)}%\n`;
+      csv += `${label},${item.count},${((parseFloat(item.count) / parseFloat(firesTotalCount[0].count)) * 100).toFixed(2)}%\n`;
     });
 
     return csv;

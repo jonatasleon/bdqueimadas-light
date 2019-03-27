@@ -259,7 +259,7 @@ define(
 
       var yFields = firesCount.y.match(/[^{\}]+(?=})/g);
       var y = firesCount.y;
-      var firesCountItems = firesCount.firesCount.rows;
+      var firesCountItems = firesCount.firesCount;
       var firesCountItemsLength = firesCountItems.length;
 
       for(var i = 0; i < firesCountItemsLength; i++) {
