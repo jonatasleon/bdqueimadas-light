@@ -296,6 +296,23 @@ define(
     };
 
     /**
+     * Creates the date / time filter.
+     * @returns {string} attribute - Date / time attribute filter
+     *
+     * @private
+     * @function createDateTimeAttribute
+     * @memberof Filter(2)
+     * @inner
+     */
+    var createDateTimeAttribute = function() {
+        var d1 = Utils.dateToString(memberDateFrom, Utils.getConfigurations().filterConfigurations.LayerToFilter.DateFormat) + 'T' + memberTimeFrom + 'Z';
+        var d2 = Utils.dateToString(memberDateTo, Utils.getConfigurations().filterConfigurations.LayerToFilter.DateFormat) + 'T' + memberTimeTo + 'Z';
+        var attribute = d1 + "/" + d2;
+
+        return attribute;
+    };
+
+    /**
      * Updates the initial and the final date.
      * @param {string} newDateFrom - New initial date (string)
      * @param {string} newDateTo - New final date (string)
@@ -556,7 +573,8 @@ define(
           updateDates(filterDateFrom, filterDateTo, 'YYYY/MM/DD');
           updateTimes(filterTimeFrom, filterTimeTo);
 
-          cql += createDateTimeFilter() + " AND ";
+          var time = createDateTimeAttribute();
+          applyTimeFilterToLayer(time, Utils.getConfigurations().filterConfigurations.LayerToFilter.LayerId)
 
           if(Map.getLayers().length > 0) processLayers(Map.getLayers(), updateLayersTime);
         }
@@ -606,6 +624,23 @@ define(
         TerraMA2WebComponents.MapDisplay.applyCQLFilter(cqlFilter, layerId);
         memberLastFilters[layerId] = cqlFilter;
       }
+    };
+
+    /**
+     * Applies a time filter to the layer with the given id.
+     * @param {string} cqlFilter - Time filter
+     * @param {string} layerId - Layer id
+     *
+     * @function applyTimeFilterToLayer
+     * @memberof Filter(2)
+     * @inner
+     */
+    var applyTimeFilterToLayer = function(time, layerId) {
+      var map = TerraMA2WebComponents.MapDisplay.getMap();
+      var findBy = TerraMA2WebComponents.MapDisplay.findBy;
+      findBy(map.getLayerGroup(), 'id', layerId).getSource().updateParams({
+        "TIME": ( time === "" ? null : time )
+      });
     };
 
     /**
