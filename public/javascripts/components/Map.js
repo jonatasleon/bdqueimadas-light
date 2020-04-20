@@ -262,6 +262,62 @@ define(
     };
 
     /**
+     * 
+     * @param {*} result 
+     */
+    var proxyRes = function(result) {
+      if(result.requestId === 'GetFeatureInfoTool') {
+        var featureInfo = result.msg;
+
+        var featuresLength = featureInfo.features.length;
+
+        if(featuresLength > 0) {
+          var firesAttributes = "";
+          btn_collapse = "<div class='box-tools pull-right'><button type='button' class='btn btn-box-tool collapse-btn' data-widget='collapse'>+</button></div>"
+
+          for(var i = 0; i < featuresLength; i++) {
+
+            firesAttributes += "<div class='box box-default'>"
+            firesAttributes += "  <div class='box-header'>"
+            firesAttributes += "    <div class='box-title'>"
+            firesAttributes += "      <strong>Id:</strong> " + featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.IdFieldName];
+            firesAttributes += "    </div>"
+            firesAttributes += btn_collapse
+            firesAttributes += "  </div>"
+            firesAttributes += "  <div class='box-body'>"
+            firesAttributes += "<strong>Latitude:</strong> " + featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.LatitudeFieldName] + ' - ' + Utils.convertLatitudeToDMS(featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.LatitudeFieldName]);
+            firesAttributes += "<br/><strong>Longitude:</strong> " + featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.LongitudeFieldName] + ' - ' + Utils.convertLongitudeToDMS(featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.LongitudeFieldName]);
+            firesAttributes += "<br/><strong>Data / Hora:</strong> " + Utils.dateTimeToString(Utils.stringToDateTime(featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.DateTimeFieldName].toString().replace('T', ' ').replace('Z', ''), Utils.getConfigurations().filterConfigurations.LayerToFilter.DateTimeFormat), "YYYY/MM/DD HH:II:SS");
+            firesAttributes += "<br/><strong>Satélite:</strong> " + featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.SatelliteFieldName];
+            firesAttributes += "<br/><strong>Município:</strong> " + featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.CityNameFieldName];
+            firesAttributes += "<br/><strong>Estado / País:</strong> " + featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.StateNameFieldName] + ' / ' + featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.CountryNameFieldName];
+            firesAttributes += "<br/><strong>Precipitação 24h:</strong> " + featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.PrecipitationFieldName];
+            firesAttributes += "<br/><strong>Nº dias sem precipitação:</strong> " + featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.NumberOfDaysWithoutPrecipitationFieldName];
+            firesAttributes += "<br/><strong>Risco Fogo / Bioma:</strong> " + featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.RiskFieldName] + ' / ' + featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.BiomeFieldName];
+            firesAttributes += "<br/><br/><a target='_blank' href='http://maps.google.com.br/maps?q=" + featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.LatitudeFieldName] + "," + featureInfo.features[i].properties[Utils.getConfigurations().filterConfigurations.LayerToFilter.LongitudeFieldName] + "&hl=pt-BR&t=h&z=10'>Veja esse ponto no Google Maps</a>";
+            firesAttributes += "  </div>"
+            firesAttributes += "</div>"
+          }
+
+          $('#feature-info-box').html(firesAttributes);
+
+          $('#feature-info-box').dialog({
+            dialogClass: "feature-info-box",
+            title: (featuresLength > 1 ? "Atributos dos focos" : "Atributos do foco"),
+            width: 300,
+            height: 380,
+            modal: false,
+            resizable: true,
+            draggable: true,
+            closeOnEscape: true,
+            closeText: "",
+            position: { my: 'top', at: 'top+15' }
+          });
+        }
+      }
+    }
+
+    /**
      * Removes a layer with a given id from the Map.
      * @param {string} layerId - Layer id
      *
@@ -411,7 +467,18 @@ define(
       $('#terrama2-map').addClass('cursor-pointer');
 
       TerraMA2WebComponents.MapDisplay.setGetFeatureInfoUrlOnClick(Utils.getConfigurations().filterConfigurations.LayerToFilter.LayerId, function(url) {
-        if(url !== null) Utils.getSocket().emit('proxyRequest', { url: url, requestId: 'GetFeatureInfoTool', format: 'json' });
+        if(url !== null) {
+          url += "&FEATURE_COUNT=30"
+
+          $.ajax({
+            url: Utils.getBaseUrl() + "proxy",
+            type: "GET",
+            data: { url: url, requestId: 'GetFeatureInfoTool', format: 'json' },
+            success: function(result) {
+              proxyRes(result);
+            }
+          });
+        }
       });
     };
 
@@ -480,29 +547,38 @@ define(
      */
     var getSubtitlesSatellites = function(satellites, biomes, countriesIds, statesIds) {
       var dates = Utils.getFilterDates(true, true, true, 0);
-      var times = Utils.getFilterTimes(true, 0);
 
       if(dates !== null) {
-        var dateTimeFrom = Utils.dateToString(Utils.stringToDate(dates[0], 'YYYY/MM/DD'), Utils.getConfigurations().firesDateFormat) + ' ' + times[0];
-        var dateTimeTo = Utils.dateToString(Utils.stringToDate(dates[1], 'YYYY/MM/DD'), Utils.getConfigurations().firesDateFormat) + ' ' + times[1];
-        var satellites = Utils.stringInArray(satellites, "all") ? '' : satellites.toString();
-        var biomes = Utils.stringInArray(biomes, "all") ? '' : biomes.toString();
-        var extent = TerraMA2WebComponents.MapDisplay.getCurrentExtent();
-        var countries = (Utils.stringInArray(countriesIds, "") || countriesIds.length === 0 ? '' : countriesIds.toString());
-        var states = (Utils.stringInArray(statesIds, "") || statesIds.length === 0 ? '' : statesIds.toString());
+        var dateFrom = Utils.stringToDate(dates[0], 'YYYY/MM/DD');
+        var dateTo = Utils.stringToDate(dates[1], 'YYYY/MM/DD');
 
-        Utils.getSocket().emit(
-          'getSatellitesRequest',
-          {
-            dateTimeFrom: dateTimeFrom,
-            dateTimeTo: dateTimeTo,
-            satellites: satellites,
-            biomes: biomes,
-            extent: extent,
-            countries: countries,
-            states: states
+        var allSatellites = Utils.getConfigurations().filterConfigurations.Satellites.filter(function(e) { 
+          var satelliteBegin = Utils.getCurrentDate(true);
+          var satelliteEnd = Utils.getCurrentDate(true);
+  
+          if(e.Begin !== "") {
+            var satelliteBeginArray = e.Begin.split('-');
+            satelliteBegin = new Date(parseInt(satelliteBeginArray[0]), parseInt(satelliteBeginArray[1]) - 1, parseInt(satelliteBeginArray[2]), 0, 0, 0);
           }
-        );
+  
+          if(e.End !== "") {
+            var satelliteEndArray = e.End.split('-');
+            satelliteEnd = new Date(parseInt(satelliteEndArray[0]), parseInt(satelliteEndArray[1]) - 1, parseInt(satelliteEndArray[2]), 0, 0, 0);
+          }
+  
+          return ((dateFrom <= satelliteBegin && dateTo >= satelliteEnd) ||
+            (dateFrom >= satelliteBegin && dateTo <= satelliteEnd) ||
+            (dateFrom <= satelliteBegin && dateTo >= satelliteBegin) ||
+            (dateFrom <= satelliteEnd && dateTo >= satelliteEnd));
+        }).map(function(e) {
+          return {"satelite": e.Id};
+        }).sort(function(a, b) {
+          if(a.satelite < b.satelite) { return -1; }
+          if(a.satelite > b.satelite) { return 1; }
+          return 0; 
+        });
+
+        updateSubtitles(allSatellites);
       }
     };
 

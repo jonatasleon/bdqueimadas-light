@@ -164,32 +164,44 @@ define(
                 $('#loading-span-graphics-background').removeClass('hide');
                 $('#graph-box').addClass('overflow-hidden');
 
-                Utils.getSocket().emit(
-                  'graphicsFiresCountRequest',
-                  {
-                    dateTimeFrom: dateTimeFrom,
-                    dateTimeTo: dateTimeTo,
-                    id: firesCountGraphicsConfig[i].Id,
-                    y: firesCountGraphicsConfig[i].Y,
-                    key: firesCountGraphicsConfig[i].Key,
-                    limit: firesCountGraphicsConfig[i].Limit,
-                    title: firesCountGraphicsConfig[i].Title,
-                    satellites: satellites,
-                    biomes: biomes,
-                    countries: memberCountries,
-                    states: memberStates,
-                    cities: memberCities,
-                    filterRules: {
-                      ignoreCountryFilter: firesCountGraphicsConfig[i].IgnoreCountryFilter,
-                      ignoreStateFilter: firesCountGraphicsConfig[i].IgnoreStateFilter,
-                      ignoreCityFilter: firesCountGraphicsConfig[i].IgnoreCityFilter,
-                      showOnlyIfThereIsACountryFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsACountryFiltered,
-                      showOnlyIfThereIsNoCountryFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsNoCountryFiltered,
-                      showOnlyIfThereIsAStateFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsAStateFiltered,
-                      showOnlyIfThereIsNoStateFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsNoStateFiltered
-                    }
+                var dataParams = {
+                  dateTimeFrom: dateTimeFrom,
+                  dateTimeTo: dateTimeTo,
+                  id: firesCountGraphicsConfig[i].Id,
+                  y: firesCountGraphicsConfig[i].Y,
+                  key: firesCountGraphicsConfig[i].Key,
+                  limit: firesCountGraphicsConfig[i].Limit,
+                  title: firesCountGraphicsConfig[i].Title,
+                  satellites: satellites,
+                  biomes: biomes,
+                  countries: memberCountries,
+                  states: memberStates,
+                  cities: memberCities,
+                  filterRules: {
+                    ignoreCountryFilter: firesCountGraphicsConfig[i].IgnoreCountryFilter,
+                    ignoreStateFilter: firesCountGraphicsConfig[i].IgnoreStateFilter,
+                    ignoreCityFilter: firesCountGraphicsConfig[i].IgnoreCityFilter,
+                    showOnlyIfThereIsACountryFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsACountryFiltered,
+                    showOnlyIfThereIsNoCountryFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsNoCountryFiltered,
+                    showOnlyIfThereIsAStateFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsAStateFiltered,
+                    showOnlyIfThereIsNoStateFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsNoStateFiltered
                   }
-                );
+                };
+
+                $.ajax({
+                  url: Utils.getBaseUrl() + "graphicsfirescount",
+                  type: "GET",
+                  headers: {
+                    'Content-Type':'application/json'
+                  },
+                  dataType: "json",
+                  data: dataParams,
+                  success: function(result) {
+                    loadFiresCountGraphic(result);
+                  }
+                });
+
+
               }
             }
           });
@@ -347,6 +359,8 @@ define(
 
       if($('#graphics-container > .graphic-item:visible').length > 0) $('#graphics-no-data').hide();
       else $('#graphics-no-data').show();
+
+      memberFiresCountGraphics[firesCount.id].resize();
     };
 
     /**
