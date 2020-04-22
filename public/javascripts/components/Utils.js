@@ -18,6 +18,8 @@ define(function() {
   var memberSocket = null;
   // Base Url
   var memberBaseUrl = null;
+  // Exportation Url
+  var memberExportationUrl = null;
 
   /**
    * Returns the configurations object.
@@ -772,7 +774,6 @@ define(function() {
   var init = function(configurations, baseUrl) {
     memberConfigurations = configurations;
     memberBaseUrl = baseUrl;
-    memberSocket = io.connect(window.location.origin, { path: baseUrl + 'socket.io' });
   };
 
   return {

@@ -152,6 +152,38 @@ var Utils = function() {
   };
 
   /**
+   * 
+   * @param {obj} obj - Object to parse
+   * @returns {obj} Parsed object
+   * 
+   * @function parseToBool
+   * @memberof Utils
+   * @inner
+   */
+  this.parseToBool = function (obj) {
+    var map = Object.create(null);
+    map['true'] = true;
+    map['false'] = false;
+    function deepParseBool(obj) {
+      var k,
+      has = Object.prototype.hasOwnProperty.bind(obj);
+    
+      for (k in obj) if (has(k)) {
+        switch (typeof obj[k]) {
+          case 'object':
+            deepParseBool(obj[k]); break;
+          case 'string':
+            if (obj[k].toLowerCase() in map) obj[k] = map[obj[k].toLowerCase()]
+          }
+      }
+    }
+
+    deepParseBool(obj);
+    return obj;
+  };
+
+
+  /**
    * Deletes a folder and all its content.
    * @param {string} path - Path to the folder
    * @param {function} callback - Callback function
