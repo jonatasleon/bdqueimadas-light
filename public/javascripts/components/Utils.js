@@ -802,6 +802,7 @@ define(function() {
   var init = function(configurations, baseUrl) {
     memberConfigurations = configurations;
     memberBaseUrl = baseUrl;
+    memberExportationUrl = exportationUrl;
   };
 
   return {
