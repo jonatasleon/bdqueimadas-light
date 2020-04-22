@@ -506,7 +506,7 @@ var Filter = function() {
         var parameters = ['%' + value + '%'];
 
         if(countries !== null) {
-          var countriesArray = countries.split(',');
+          var countriesArray = countries.length > 1 ? countries.split(',') : countries;
           query += " and c." + memberTablesConfig.Countries.IdFieldName + " in (";
 
           for(var i = 0, countriesArrayLength = countriesArray.length; i < countriesArrayLength; i++) {
@@ -518,7 +518,7 @@ var Filter = function() {
         }
 
         if(states !== null) {
-          var statesArray = states.split(',');
+          var statesArray = states.length > 1 ? states.split(',') : states;
           query += " and b." + memberTablesConfig.States.IdFieldName + " in (";
 
           for(var i = 0, statesArrayLength = statesArray.length; i < statesArrayLength; i++) {

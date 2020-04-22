@@ -167,6 +167,13 @@ define(
             '<div class="component-filter-title">Confirme abaixo os filtros da exportação.</div>' +
             '<div class="component-filter-content" style="max-height: ' + ($(window).outerHeight() - 212) + 'px;">' +
               '<div class="form-group bdqueimadas-form">' +
+                '<label for="continents-export" class="col-sm-3 control-label" style="text-align: left;">Email</label>' +
+                '<div class="col-sm-9">' +
+                  '<input type="email" class="form-control" placeholder="Email" name="email" id="email">' +
+                '</div>' +
+              '</div>' +
+              '<span class="help-block component-filter-error" id="filter-error-export-email"></span>' +
+              '<div class="form-group bdqueimadas-form">' +
                 '<div class="float-left" style="width: 200px;">' +
                   '<label for="countries-export">Países</label>' +
                   '<select multiple id="countries-export" name="countries-export" class="form-control float-left">' + (memberFilterExport !== null ? memberFilterExport.countriesHtml : $('#countries').html()) + '</select>' +
@@ -243,7 +250,10 @@ define(
               '<span class="help-block component-filter-error" id="filter-error-export-type"></span>' +
               '<span class="help-block component-filter-error" id="filter-error-export-main"></span>' +
             '</div>' +
-          '</div>',
+          '</div>'+
+          '<script src="https://www.google.com/recaptcha/api.js"></script>' +
+          '<span class="help-block component-filter-error" id="filter-error-export-recaptcha"></span>' +
+          '<div class="g-recaptcha" data-sitekey="6LeaJLkUAAAAAH1WoO9aNcuYD9Ck4ScycnWpPtR2"></div></div>',
           buttons: [
             {
               type: 'submit',
@@ -265,10 +275,15 @@ define(
                     }]
                   });
                 } else {
+                  $("#filter-error-export-email").text('');
+                  $("#filter-error-export-recaptcha").text('');
                   $("#filter-error-export-dates").text('');
                   $("#filter-error-export-satellite").text('');
                   $("#filter-error-export-biome").text('');
                   $("#filter-error-export-type").text('');
+
+                  var google_recaptcha = grecaptcha.getResponse();
+                  grecaptcha.reset();
 
                   if($("#filter-date-to-export").datepicker('getDate') !== null && $("#filter-date-from-export").datepicker('getDate') !== null) {
                     var timeDiffBetweenDates = Math.abs($("#filter-date-to-export").datepicker('getDate').getTime() - $("#filter-date-from-export").datepicker('getDate').getTime());
@@ -298,6 +313,11 @@ define(
                     $("#filter-error-export-dates").text('Horas inválidas!');
                     $("#filter-time-from-expor").val('');
                     $("#filter-time-to-expor").val('');
+                  } else if(!Utils.emailIsValid($("#email").val())){
+                    $("#filter-error-export-email").text('Email inválido!');
+                    $("#email").val('');
+                  } else if (google_recaptcha === ""){
+                    $("#filter-error-export-recaptcha").text('Clique em "Não sou um robô"');
                   } else if($("#filter-time-from-export").val() === "" || !Utils.isTimeValid($("#filter-time-from-export").val())) {
                     $("#filter-error-export-dates").text('Hora inicial inválida!');
                     $("#filter-time-from-expor").val('');
@@ -310,6 +330,8 @@ define(
                     $("#filter-error-export-biome").text('Selecione algum bioma!');
                   } else if($("#exportation-type").val() === null) {
                     $("#filter-error-export-type").text('Formato da exportação inválido!');
+                  } else if(($('#pas-export').data('value') !== undefined && $('#pas-export').data('value') !== '') && (!$('#buffer-internal').is(':checked') && !$('#buffer-five').is(':checked') && !$('#buffer-ten').is(':checked'))) {
+                    $("#filter-error-export-aps").text('Quando existe uma UC ou TI filtrada, deve ter pelo menos alguma das três opções marcadas: Interno, Buffer 5Km ou Buffer 10Km!');
                   } else {
                     var exportationSpatialFilterData = getSpatialData(2);
 
@@ -324,7 +346,7 @@ define(
                       cities: exportationSpatialFilterData.cities,
                       specialRegions: exportationSpatialFilterData.specialRegions,
                       protectedArea: ($('#pas-export').data('value') !== undefined && $('#pas-export').data('value') !== '' ? JSON.parse($('#pas-export').data('value')) : null),
-                      industrialFires: Filter.getIndustrialFires(),
+                      industrialFires: "false",
                       bufferInternal: $('#buffer-internal').is(':checked').toString(),
                       bufferFive: $('#buffer-five').is(':checked').toString(),
                       bufferTen: $('#buffer-ten').is(':checked').toString(),
@@ -885,15 +907,18 @@ define(
       });
 
       $(document).on('change', '#countries-export', function() {
-        if($(this).val() && !Utils.stringInArray($(this).val(), "") && $(this).val().length > 0)
-        $.ajax({
-          url: Utils.getBaseUrl() + "statesbycountries",
-          type: "GET",
-          data: { countries: [$(this).val()], filter: 3 },
-          success: function(result) {
-            statesByCountriesRes(result);
+        if($(this).val()) {
+          if(!Utils.stringInArray($(this).val(), "") && $(this).val().length > 0) {
+            $.ajax({
+              url: Utils.getBaseUrl() + "statesbycountries",
+              type: "GET",
+              data: { countries: $(this).val(), filter: 3 },
+              success: function(result) {
+                statesByCountriesRes(result);
+              }
+            });
           }
-        });
+        }
       });
 
       $('.filter-date').on('focus', function() {

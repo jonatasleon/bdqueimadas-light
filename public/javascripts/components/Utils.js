@@ -763,6 +763,22 @@ define(function() {
   };
 
   /**
+   * Returns email validation
+   * @param {string} email - Id of the special region
+   * @returns {bool} valid - Email is valid
+   *
+   * @function emailIsValid
+   * @memberof Utils
+   * @inner
+   */
+  var emailIsValid = function(email) {
+    var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+    var valid = regex.test(email);
+    return valid;
+  };
+
+
+  /**
    * Initializes the necessary features.
    * @param {object} configurations - Configurations object
    * @param {string} baseUrl - Base Url
@@ -803,6 +819,7 @@ define(function() {
     getCurrentDate: getCurrentDate,
     convertLatitudeToDMS: convertLatitudeToDMS,
     convertLongitudeToDMS: convertLongitudeToDMS,
+    emailIsValid: emailIsValid,
     init: init
   };
 });
