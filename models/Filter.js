@@ -538,6 +538,35 @@ var Filter = function() {
       } else return callback(err);
     });
   };
+
+
+    /**
+     * Returns the extent of the point corresponding to the received lat, long
+     * @param {object} params - Parameters of request containing lat and long
+     * @param {function} callback - Callback function
+     *
+     *
+     * @function getLatLngExtent
+     * @memberOf Filter
+     * @inner
+     */
+  this.getLatLngExtent = function(params, callback) {
+    var parameters = [params.lng, params.lat];
+
+    memberPgPool.connect(function(err, client, done) {
+      if(!err) {
+        // Creation of the query
+        var query = "select st_extent(st_buffer(st_point($1, $2), 1)) as extent";
+
+        // Execution of the query
+        client.query(query, parameters, function(err, result) {
+          done();
+          if(!err) return callback(null, result);
+          else return callback(err);
+        });
+      } else return callback(err);
+    });
+  };
 };
 
 module.exports = Filter;

@@ -66,10 +66,10 @@
 	"UCs / TIs": "UCs / TIs",
 	"Data / Hora Início": "Data / Hora Início",
 	"Data / Hora Fim": "Data / Hora Fim",
-	"Data / Hora Início - TMG (Z)": "Data / Hora Início - TMG (Z)",
-	"Data / Hora Fim - TMG (Z)": "Data / Hora Fim - TMG (Z)",
-	"Data Fim - TMG (Z)": "Data Fim - TMG (Z)",
-	"Hora Fim - TMG (Z)": "Hora Fim - TMG (Z)",
+	"Data / Hora Início - UTC": "Data / Hora Início - UTC",
+	"Data / Hora Fim - UTC": "Data / Hora Fim - UTC",
+	"Data Fim - UTC": "Data Fim - UTC",
+	"Hora Fim - UTC": "Hora Fim - UTC",
 	"Data Início - Z": "Data Início - Z",
 	"Data Fim - Z": "Data Fim - Z",
 	"Hora Início - Z": "Hora Início - Z",
@@ -105,5 +105,6 @@
 	"Todos os Países": "Todos os Países",
 	"BDQueimadas Light": "BDQueimadas Light",
 	"INPE - Programa Queimadas": "INPE - Programa Queimadas",
-	"Unidades de Conservação Federais (Apenas Brasil)": "Unidades de Conservação Federais (Apenas Brasil)"
+	"Unidades de Conservação Federais (Apenas Brasil)": "Unidades de Conservação Federais (Apenas Brasil)",
+	"Pesquisar por Latitude/Longitude": "Pesquisar por Latitude/Longitude"
 }

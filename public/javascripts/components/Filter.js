@@ -809,9 +809,9 @@ define(
             (dateFrom <= satelliteReferenceBegin && dateTo >= satelliteReferenceBegin) || 
             (dateFrom <= satelliteReferenceEnd && dateTo >= satelliteReferenceEnd)) {
             if(Utils.stringInArray(selectedOptions, satellitesList[i].Id)) {
-              referenceSatellite += "<option value=\"" + satellitesList[i].Id + "\" selected>Refer. (" + satellitesList[i].Name + ")</option>";
+              referenceSatellite += "<option value=\"" + satellitesList[i].Id + "\" selected>Satélite de referência (" + satellitesList[i].Name + ")</option>";
             } else {
-              referenceSatellite += "<option value=\"" + satellitesList[i].Id + "\">Refer. (" + satellitesList[i].Name + ")</option>";
+              referenceSatellite += "<option value=\"" + satellitesList[i].Id + "\">Satélite de referência (" + satellitesList[i].Name + ")</option>";
             }
           } else {
             if(Utils.stringInArray(selectedOptions, satellitesList[i].Id)) {
@@ -846,7 +846,14 @@ define(
      * @inner
      */
     var selectCountries = function(ids) {
-      Utils.getSocket().emit('spatialFilterRequest', { ids: ids, key: 'Countries', filterForm: false });
+      $.ajax({
+        url: Utils.getBaseUrl() + "countries",
+        type: "GET",
+        data: { ids: ids, key: 'Countries', filterForm: false },
+        success: function(result) {
+          processData(result);
+        }
+      });
     };
 
     /**
@@ -858,8 +865,23 @@ define(
      * @inner
      */
     var selectStates = function(ids) {
-      Utils.getSocket().emit('countriesByStatesRequest', { states: ids });
-      Utils.getSocket().emit('spatialFilterRequest', { ids: ids, key: 'States', filterForm: false });
+      $.ajax({
+        url: Utils.getBaseUrl() + "countriesbystates",
+        type: "GET",
+        data: { states: ids },
+        success: function(result) {
+          countriesByStatesRes(result);
+        }
+      });
+
+      $.ajax({
+        url: Utils.getBaseUrl() + "states",
+        type: "GET",
+        data: { ids: ids.toString(), specialRegions: [], specialRegionsCountries: [], key: 'States', filterForm: false },
+        success: function(result) {
+          processData(result);
+        }
+      });
     };
 
     /**

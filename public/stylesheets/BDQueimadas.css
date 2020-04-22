@@ -1043,3 +1043,7 @@ label { margin-bottom: 0px !important; }
   color: red;
   cursor: pointer;
 }
+
+.font-white {
+  color: #FFFFFF;
+}

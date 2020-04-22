@@ -138,7 +138,7 @@ define(
                                        "<div class=\"box-body\" style=\"display: block;\"><div class=\"chart\">" +
                                        "<canvas id=\"fires-count-" + firesCountGraphicsConfig[i].Id + "-graphic\"></canvas>" +
                                        "<a href=\"#\" class=\"btn btn-app graphic-button export-graphic-data\" data-id=\"" + firesCountGraphicsConfig[i].Id +
-                                       "\"><i class=\"fa fa-download\"></i>Exportar Dados em CSV</a>";
+                                       "\"><i class=\"fa fa-download\"></i>Exportar Todos os Dados em CSV</a>";
 
                     htmlElements += "<div id=\"fires-count-" + firesCountGraphicsConfig[i].Id +
                                     "-graphic-message-container\" class=\"text-center\">" +
@@ -151,7 +151,7 @@ define(
                                        "<div class=\"box-body\" style=\"display: none;\"><div class=\"chart\">" +
                                        "<canvas id=\"fires-count-" + firesCountGraphicsConfig[i].Id + "-graphic\"></canvas>" +
                                        "<a href=\"#\" class=\"btn btn-app graphic-button export-graphic-data\" data-id=\"" + firesCountGraphicsConfig[i].Id +
-                                       "\"><i class=\"fa fa-download\"></i>Exportar Dados em CSV</a>";
+                                       "\"><i class=\"fa fa-download\"></i>Exportar Todos os Dados em CSV</a>";
 
                     htmlElements += "<div id=\"fires-count-" + firesCountGraphicsConfig[i].Id + "-graphic-message-container\" class=\"text-center\"></div></div></div></div>";
                   }
@@ -164,32 +164,44 @@ define(
                 $('#loading-span-graphics-background').removeClass('hide');
                 $('#graph-box').addClass('overflow-hidden');
 
-                Utils.getSocket().emit(
-                  'graphicsFiresCountRequest',
-                  {
-                    dateTimeFrom: dateTimeFrom,
-                    dateTimeTo: dateTimeTo,
-                    id: firesCountGraphicsConfig[i].Id,
-                    y: firesCountGraphicsConfig[i].Y,
-                    key: firesCountGraphicsConfig[i].Key,
-                    limit: firesCountGraphicsConfig[i].Limit,
-                    title: firesCountGraphicsConfig[i].Title,
-                    satellites: satellites,
-                    biomes: biomes,
-                    countries: memberCountries,
-                    states: memberStates,
-                    cities: memberCities,
-                    filterRules: {
-                      ignoreCountryFilter: firesCountGraphicsConfig[i].IgnoreCountryFilter,
-                      ignoreStateFilter: firesCountGraphicsConfig[i].IgnoreStateFilter,
-                      ignoreCityFilter: firesCountGraphicsConfig[i].IgnoreCityFilter,
-                      showOnlyIfThereIsACountryFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsACountryFiltered,
-                      showOnlyIfThereIsNoCountryFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsNoCountryFiltered,
-                      showOnlyIfThereIsAStateFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsAStateFiltered,
-                      showOnlyIfThereIsNoStateFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsNoStateFiltered
-                    }
+                var dataParams = {
+                  dateTimeFrom: dateTimeFrom,
+                  dateTimeTo: dateTimeTo,
+                  id: firesCountGraphicsConfig[i].Id,
+                  y: firesCountGraphicsConfig[i].Y,
+                  key: firesCountGraphicsConfig[i].Key,
+                  limit: firesCountGraphicsConfig[i].Limit,
+                  title: firesCountGraphicsConfig[i].Title,
+                  satellites: satellites,
+                  biomes: biomes,
+                  countries: memberCountries,
+                  states: memberStates,
+                  cities: memberCities,
+                  filterRules: {
+                    ignoreCountryFilter: firesCountGraphicsConfig[i].IgnoreCountryFilter,
+                    ignoreStateFilter: firesCountGraphicsConfig[i].IgnoreStateFilter,
+                    ignoreCityFilter: firesCountGraphicsConfig[i].IgnoreCityFilter,
+                    showOnlyIfThereIsACountryFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsACountryFiltered,
+                    showOnlyIfThereIsNoCountryFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsNoCountryFiltered,
+                    showOnlyIfThereIsAStateFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsAStateFiltered,
+                    showOnlyIfThereIsNoStateFiltered: firesCountGraphicsConfig[i].ShowOnlyIfThereIsNoStateFiltered
                   }
-                );
+                };
+
+                $.ajax({
+                  url: Utils.getBaseUrl() + "graphicsfirescount",
+                  type: "GET",
+                  headers: {
+                    'Content-Type':'application/json'
+                  },
+                  dataType: "json",
+                  data: dataParams,
+                  success: function(result) {
+                    loadFiresCountGraphic(result);
+                  }
+                });
+
+
               }
             }
           });
@@ -339,7 +351,7 @@ define(
       $("#fires-count-" + firesCount.id + "-graphic").parent().children('.export-graphic-data').show();
       $("#fires-count-" + firesCount.id + "-graphic").parents('.graphic-item').show();
 
-      if(firesCount.firesCount.rowCount <= 1) hideGraphic(firesCount.id);
+      if(firesCount.firesCount.rowCount <= 1 && firesCount.id == 'firesByCountry') hideGraphic(firesCount.id);
       else if(firesCount.filterRules.showOnlyIfThereIsACountryFiltered && memberCountries === '') hideGraphic(firesCount.id);
       else if(firesCount.filterRules.showOnlyIfThereIsNoCountryFiltered && memberCountries !== '') hideGraphic(firesCount.id);
       else if(firesCount.filterRules.showOnlyIfThereIsAStateFiltered && memberStates === '') hideGraphic(firesCount.id);
@@ -347,6 +359,13 @@ define(
 
       if($('#graphics-container > .graphic-item:visible').length > 0) $('#graphics-no-data').hide();
       else $('#graphics-no-data').show();
+
+      memberFiresCountGraphics[firesCount.id].resize();
+
+      $(".graphic-item > .box-header").on('click', function() {
+        var toggleBtn = $(this)[0].lastChild.lastChild;
+        if(toggleBtn) toggleBtn.click();
+      });
     };
 
     /**

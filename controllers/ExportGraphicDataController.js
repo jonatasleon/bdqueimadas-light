@@ -60,6 +60,7 @@ var ExportGraphicDataController = function(app) {
 
     memberGraphics.getFiresTotalCount(request.query.dateTimeFrom, request.query.dateTimeTo, filterRules, options, function(err, firesTotalCount) {
       if(err) return console.error(err);
+      options.limit = undefined;
 
       if(graphicConfigurations.Key === "week") {
         memberGraphics.getFiresCountByWeek(request.query.dateTimeFrom, request.query.dateTimeTo, filterRules, options, function(err, firesCount) {
@@ -99,7 +100,7 @@ var ExportGraphicDataController = function(app) {
     require('crypto').randomBytes(24, function(err, buffer) {
       var csvPath = path.join(__dirname, '../tmp/graphic-csv-' + buffer.toString('hex') + '.csv');
 
-      memberFs.writeFile(csvPath, csv, 'ascii', function(err) {
+      memberFs.writeFile(csvPath, csv, 'utf-8', function(err) {
         if(err) return console.error(err);
 
         response.download(csvPath, 'Focos por ' + key + ' - de ' + dateTimeFrom + ' a ' + dateTimeTo + '.csv', function(err) {
@@ -123,7 +124,7 @@ var ExportGraphicDataController = function(app) {
    * @inner
    */
   var createCsvFiresCount = function(firesTotalCount, firesCount, y) {
-    var csv = "Campo,Valor,Percentagem do Total de Focos\n";
+    var csv = "Campo,Valor,Porcentagem do Total de Focos\n";
     var yFields = y.match(/[^{\}]+(?=})/g);
 
     firesCount.rows.forEach(function(item) {
@@ -135,6 +136,7 @@ var ExportGraphicDataController = function(app) {
         label = label.replace("{" + yFields[i] + "}", field);
       }
 
+      label = label.replace(new RegExp(",", 'g'), " -");
       csv += label + ',' + item.count + ',' + ((parseFloat(item.count) / parseFloat(firesTotalCount.rows[0].count)) * 100).toFixed(2) + '%\n';
     });
 
