@@ -32,6 +32,8 @@ define(
     var memberExportationTextTimeout = null;
     // Flag that indicates if there is a exportation in progress
     var memberExportationInProgress = false;
+    // Markers of the map
+    var markers = null;
 
     /**
      * Updates the necessary components.
@@ -185,12 +187,13 @@ define(
                     '</button>' +
                   '</span>' +
                 '</div>' +
+                '<span class="help-block component-filter-error" id="filter-error-search-city-export"></span>' +
               '</div>' +
               '<div class="clear" style="height: 5px;"></div>' +
               '<div class="form-group bdqueimadas-form">' +
                 '<label style="width: 100%; text-align: center; margin-bottom: 4px !important;">Obs: dados após Jun/1998</label>' +
                 '<div class="float-left div-date-filter-export">' +
-                  '<label for="filter-date-from-export">Data / Hora Início - TMG (Z)</label>' +
+                  '<label for="filter-date-from-export">Data / Hora Início - UTC</label>' +
                   '<input type="text" class="form-control float-left" id="filter-date-from-export" placeholder="Data Início">' +
                 '</div>' +
                 '<div class="float-right div-date-filter-export">' +
@@ -200,7 +203,7 @@ define(
               '<div class="clear" style="height: 5px;"></div>' +
               '<div class="form-group bdqueimadas-form">' +
                 '<div class="float-left div-date-filter-export">' +
-                  '<label for="filter-date-to-export">Data / Hora Fim - TMG (Z)</label>' +
+                  '<label for="filter-date-to-export">Data / Hora Fim - UTC</label>' +
                   '<input type="text" class="form-control float-left" id="filter-date-to-export" placeholder="Data Fim">' +
                 '</div>' +
                 '<div class="float-right div-date-filter-export">' +
@@ -228,45 +231,16 @@ define(
                 '<div class="form-group bdqueimadas-form">' +
                 '<label for="exportation-type" class="col-sm-6 control-label" style="text-align: left; padding-right: 0; width: 188px;">Formato da exportação</label>' +
                 '<div class="col-sm-6" style="float: right; width: 240px;">' +
-                  '<select multiple id="exportation-type" class="form-control">' +
-                    '<option value="all">Todos os Formatos</option>' +
-                    '<option selected value="csv">CSV</option>' +
-                    '<option value="geojson">GeoJSON</option>' +
-                    '<option value="kml">KML</option>' +
-                    '<option value="shapefile">Shapefile</option>' +
-                  '</select>' +
-                '</div>' +
+                '<select id="exportation-type" class="form-control">' +
+                  '<option selected value="csv">CSV</option>' +
+                  '<option value="geojson">GeoJSON</option>' +
+                  '<option value="kml">KML</option>' +
+                  '<option value="shapefile">Shapefile</option>' +
+                '</select>' +
+              	'</div>' +
                 '</div>' +
               '</div>' +
               '<span class="help-block component-filter-error" id="filter-error-export-type"></span>' +
-              '<span id="csvFields"' + (memberFilterExport && !Utils.stringInArray(memberFilterExport.format.split(','), 'csv') ? ' style="display: none;"' : '') + '>' +
-                '<div class="form-group bdqueimadas-form">' +
-                  '<label>Separador Decimal</label>' +
-                  '<div class="input-group" style="width: 100%;">' +
-                    '<div class="row">' +
-                      '<div class="col-sm-6">' +
-                        '<input type="radio" name="decimalSeparator" value="comma" checked> Vírgula (,)' +
-                      '</div>' +
-                      '<div class="col-sm-6">' +
-                        '<input type="radio" name="decimalSeparator" value="point"> Ponto (.)' +
-                      '</div>' +
-                    '</div>' +
-                  '</div>' +
-                '</div>' +
-                '<div class="form-group bdqueimadas-form">' +
-                  '<label>Caractere Separador de Campos</label>' +
-                  '<div class="input-group" style="width: 100%;">' +
-                    '<div class="row">' +
-                      '<div class="col-sm-6">' +
-                        '<input type="radio" name="fieldSeparator" value="semicolon" checked> Ponto e Vírgula (;)' +
-                      '</div>' +
-                      '<div class="col-sm-6">' +
-                        '<input type="radio" name="fieldSeparator" value="comma"> Vírgula (,)' +
-                      '</div>' +
-                    '</div>' +
-                  '</div>' +
-                '</div>' +
-              '</span>' +
               '<span class="help-block component-filter-error" id="filter-error-export-main"></span>' +
             '</div>' +
           '</div>',
@@ -431,20 +405,27 @@ define(
           minLength: 2,
           source: function(request, response) {
             var countriesAndStates = getSpatialData(2);
-
-            $.ajax({
-              url: Utils.getBaseUrl() + "search-for-cities",
-              dataType: "json",
-              data: {
-                minLength: 2,
-                value: request.term,
-                countries: countriesAndStates.countries,
-                states: countriesAndStates.states
-              },
-              success: function(data) {
-                response(data);
+            if(countriesAndStates.countries === "" || countriesAndStates.states === "") {
+              $("#filter-error-search-city-export").html('É necessário selecionar país e estado antes de filtrar pelo município - corrigir!');
+              setTimeout(function() {$('#city-export').val("")}, 500);
+            }
+            else {
+              $("#filter-error-search-city-export").html('');
+              
+              $.ajax({
+                url: Utils.getBaseUrl() + "search-for-cities",
+                dataType: "json",
+                data: {
+                  minLength: 2,
+                  value: request.term,
+                  countries: $('#countries-export').val(),
+                  states: $('#states-export').val()
+                },
+                success: function(data) {
+                  response(data);
               }
-            });
+              });
+            }
           },
           select: function(event, ui) {
             event.preventDefault();
@@ -524,7 +505,6 @@ define(
       });
 
       // Filter Events
-
       $('#filter-button').on('click', function() {
         if(Filter.isInitialFilter())
           Filter.setInitialFilterToFalse();
@@ -992,7 +972,6 @@ define(
       });
 
       // Graphics Events
-
       $('#filter-button-graphics').on('click', function() {
         Graphics.updateGraphics(true);
       });
@@ -1006,11 +985,12 @@ define(
         else $(this).text('Expandir');
       });
 
+      
       // Map Events
-
       $('#dragbox').on('click', function() {
         Map.resetMapMouseTools();
         Map.activateDragboxTool();
+        openDragboxDialog([0]);
       });
 
       $('#moveMap').on('click', function() {
@@ -1039,6 +1019,117 @@ define(
         } else {
           $('#map-subtitle').animate({ 'width': '150px' }, { duration: 500, queue: false });
           $('.map-subtitle-toggle > i').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+        }
+      });
+
+      $('#getLatLng > button').on('click', function() {
+
+        var isOpen = $("#lat-lng-box").hasClass("ui-dialog-content") && $("#lat-lng-box").dialog("isOpen");
+        
+        if(!isOpen) {
+          var html =  '<div class="form-group bdqueimadas-form float-left">'+
+          '<div class="btn-group btn-group-toggle" data-toggle="buttons" style="float:left;">'+
+          '  <label class="btn btn-secondary active">'+
+          '    <input type="radio" name="options" id="decimal" autocomplete="off" checked> Graus Decimais'+
+          '  </label>'+
+          '  <label class="btn btn-secondary">'+
+          '    <input type="radio" name="options" id="graus" autocomplete="off"> Graus, Minutos e Segundos'+
+          '  </label><br><br>'+
+          '</div>'+
+          '</br></br>'+
+          '<div id="decimalFields">'+
+          '<input type="number" step="0.0001" style="width: 100px; float: left; padding-left: 5px; padding-right: 5px;" class="form-control" id="lat" placeholder="Latitude">'+
+          '<input type="number" step="0.0001" style="width: 100px; float: left; margin-left: 5px; padding-left: 5px; padding-right: 5px;" class="form-control" id="lng" placeholder="Longitude"></div>'+
+          '<div id="grausFields">'+
+          '<div style="display: inline-block"><span style="float: left; font-weight: bold; margin-top: 4px">Lat&nbsp;&nbsp;&nbsp;</span>'+
+          '<input type="number" step="0.0001" style="width: 100px; float: left; margin-left: 5px;padding-left: 5px; padding-right: 5px;" class="form-control" id="grausLat" placeholder="Graus">'+
+          '<input type="number" step="0.0001" style="width: 100px; float: left; margin-left: 5px;padding-left: 5px; padding-right: 5px;" class="form-control" id="minLat" placeholder="Minutos">'+
+          '<input type="number" step="0.0001" style="width: 100px; float: left; margin-left: 5px; padding-left: 5px; padding-right: 5px;" class="form-control" id="segLat" placeholder="Segundos">'+
+          '<select style="width: 100px; float: left; margin-left: 5px; padding-left: 5px; padding-right: 5px;" id="norteSul" name="" class="form-control float-left"><option value="S" selected="">Sul</option><option value="N">Norte</option></select>'+
+          '</div>'+
+          '<div style="display: inline-block"><span style="float: left; font-weight: bold; margin-top: 4px">Lon&nbsp;&nbsp;&nbsp;</span>'+
+          '<input type="number" step="0.0001" style="width: 100px; float: left;  padding-left: 5px; padding-right: 5px;" class="form-control" id="grausLng" placeholder="Graus">'+
+          '<input type="number" step="0.0001" style="width: 100px; float: left; margin-left: 5px;padding-left: 5px; padding-right: 5px;" class="form-control" id="minLng" placeholder="Minutos">'+
+          '<input type="number" step="0.0001" style="width: 100px; float: left; margin-left: 5px; padding-left: 5px; padding-right: 5px;" class="form-control" id="segLng" placeholder="Segundos">'+
+          '<select style="width: 100px; float: left; margin-left: 5px; padding-left: 5px; padding-right: 5px;" id="oesteLeste" name="" class="form-control float-left"><option value="O" selected="">Oeste</option><option value="L">Leste</option></select>'+
+          '</div>'+
+          '</div></div>';
+          
+            $('#lat-lng-box').html(html);
+            $('#lat-lng-box').dialog({
+            dialogClass: "map-info-box",
+            title: "Pesquisa por Latitude/Longitude",
+            width: 500,
+            maxHeight: 500,
+            modal: false,
+            resizable: true,
+            draggable: true,
+            closeOnEscape: true,
+            closeText: "",
+            position: { my: 'top', at: 'top+15' },
+            open: function() {
+                $("#grausFields").hide();
+
+                $("#graus").change(function(e) {
+                  $("#decimalFields").hide();
+                  $("#grausFields").show();
+                });
+                $("#decimal").change(function(e) {
+                  $("#grausFields").hide();
+                  $("#decimalFields").show();
+                });
+            },
+            close: function() {
+              if(markers)
+                Map.getMap().removeLayer(markers);
+              Map.resetMapMouseTools();  
+            },
+            buttons : {
+              'PESQUISAR': {
+                text: 'Pesquisar',
+                "class": 'btn btn-primary btn-extent font-white',
+                click: function() {
+                  var lat = 0;
+                  var lng = 0;
+
+                  if($("#decimal").is(":checked")) {
+                    lat = $("#lat").val().replace(",", ".");
+                    lng = $("#lng").val().replace(",", ".");
+                  }
+                  else {
+                    var minLat = parseFloat($("#minLat").val().replace(",", "."));
+                    var segLat = parseFloat($("#segLat").val().replace(",", "."));
+                    var minLng = parseFloat($("#minLng").val().replace(",", "."));
+                    var segLng = parseFloat($("#segLng").val().replace(",", "."));
+                    var norteSul = $("#norteSul").val();
+                    var lesteOeste = $("#oesteLeste").val();
+
+                    lat = parseFloat($("#grausLat").val().replace(",", ".")) + (parseFloat( minLat / 60) + ( segLat / 3600));
+                    lng = parseFloat($("#grausLng").val().replace(",", ".")) + (parseFloat( minLng / 60) + ( segLng / 3600));
+
+                    if(lesteOeste === "O")
+                      lat = -Math.abs(lat);
+                    
+                    if(norteSul === "S")
+                      lng = -Math.abs(lng);
+                  }
+
+                  $.ajax({
+                    url: Utils.getBaseUrl() + "latlng",
+                    type: "GET",
+                    data: { lat: lat, lng: lng},
+                    success: function(result) {
+                      var extent = result.extent.rows[0].extent.replace('BOX(', '').replace(')', '').split(',');
+                      var extentArray = extent[0].split(' ');
+                      extentArray = extentArray.concat(extent[1].split(' '));
+                      TerraMA2WebComponents.MapDisplay.zoomToExtent(extentArray);
+                      addMarkerToMap({lat: lat, lng: lng});
+                    }
+                  });
+                }
+              }
+            }
+          });
         }
       });
 
@@ -1177,7 +1268,11 @@ define(
 
       $(document).on('click', '.layer-time-update', function() {
         if(!$("#hidden-layer-time-update-" + $(this).data("id")).hasClass('hasDatepicker')) {
+          var span = $("#hidden-layer-time-update-" + $(this).data("id")).siblings();
+          var currentDate = span.children().text();
+
           $("#hidden-layer-time-update-" + $(this).data("id")).datepicker(Utils.getConfigurations().applicationConfigurations.DatePickerDefaultOptions);
+          $("#hidden-layer-time-update-" + $(this).data("id")).datepicker('setDate', new Date(currentDate));
         }
 
         $("#hidden-layer-time-update-" + $(this).data("id")).datepicker("show");
@@ -1243,6 +1338,8 @@ define(
         $.event.trigger({type: "updateMapInformationsBox"});
       });
 
+       
+
       // AttributesTable events
 
       $('#filter-button-attributes-table').on('click', function() {
@@ -1260,53 +1357,120 @@ define(
       });
 
       // TerraMA2WebComponents events
+      var mapa = Map.getMap();
+      var searchExtent = false;
+      
+      mapa.getView().on('propertychange', function(e) {
+        var isOpen = $("#extent-box").hasClass("ui-dialog-content") && $("#extent-box").dialog("isOpen");
+        if(e.key === 'resolution' && isOpen && !searchExtent) {
+          var extent = processExtent(mapa.getView().calculateExtent(mapa.getSize()));
+    
+            $("#extent-one").val(extent[0]);
+            $("#extent-two").val(extent[1]);
+            $("#extent-three").val(extent[2]);
+            $("#extent-four").val(extent[3]);
+        }
+     });
+
+
+      /**
+       * Function to format extent array
+       * @returns {arr} extent formatted array
+       * 
+       * @private
+       * @function processExtent
+       * @memberof BDQueimadas
+       * @inner
+      */   
+      var processExtent = function(arr) {
+        for(var i = 0; i < arr.length; i++) {
+          arr[i] = arr[i].toString();
+          if(arr[i].indexOf(".") > -1) {
+            var parts = arr[i].split(".");
+            arr[i] = parts[0] + "." +parts[1].substring(0, 4);
+          }
+        }
+        return arr;
+      };
+
+      /**
+        * Open the DragBox Dialog and set the extent inputs
+        *
+        * @private
+        * @function openDragboxDialog
+        * @memberof BDQueimadas
+        * @inner
+      */
+      var openDragboxDialog = function(dragBoxExtent) {
+        var extent = [];
+        searchExtent = false;
+        dragBoxExtent[0] !== 0 ? extent = processExtent(dragBoxExtent) : extent = processExtent(Map.getMap().Ua); 
+
+        var html =  '<div class="component-filter">' +
+                    '<div class="component-filter-content" style="max-height: ' + ($(window).outerHeight() - 212) + 'px;">' +
+                      '<div class="form-horizontal">' +
+                      '</div>' +
+                      '<div class="clear" style="height: 5px;"></div>' +
+                      '<table style="margin-left: 60px;"><tbody>'+
+                      '<tr><td></td><td class="text-center"><input type="text" id="extent-four" class="form-control" style="max-width: 90px; margin-left: 20px; margin-bottom: 10px;" value="' + extent[3] + '"/>' +'</td><td></td></tr>' + 
+                      '<tr><td><input type="text" class="form-control" id="extent-one" style="max-width: 90px; margin-left: 16px;" value="' + extent[0] + '"/>' +
+                      '</td><td class="text-center"><img src="'+Utils.getBaseUrl() + 'images/maptool/dragboxDirections.jpg" style="width: 110px;margin: 0 5px 0 5px;"/>'+
+                      '</td><td><input type="text" class="form-control" id="extent-three" style="max-width: 90px; margin-right: 16px; float: right;" value="' + extent[2] + '"/></td></tr>' + 
+                      '<tr><td></td><td class="text-center"><input type="text" class="form-control" id="extent-two" style="max-width: 90px; margin-left: 20px; margin-top: 10px;" value="' + extent[1] + '"/>' +'</td><td></td></tr>' + 
+                      '</table>'+
+                      '<br>'+
+                      '<i class="fa fa-info-circle"><small>&nbsp;&nbsp;Arraste o mouse para desenhar o filtro ou digite os valores e clique em Pesquisar</small></i>'+
+                    '</div>' +
+                  '</div>';
+                    
+        $('#extent-box').html(html);
+        $('#extent-box').dialog({
+          dialogClass: "map-info-box",
+          title: "Área Selecionada",
+          width: 500,
+          maxHeight: 500,
+          modal: false,
+          resizable: true,
+          draggable: true,
+          closeOnEscape: true,
+          closeText: "",
+          position: { my: 'top', at: 'top+15' },
+          open: function() {
+          },
+          close: function() {
+            Map.resetMapMouseTools();
+          },
+          buttons : {
+            'PESQUISAR': {
+              text: 'Pesquisar',
+              "class": 'btn btn-primary btn-extent font-white ',
+              click: function() {
+                searchExtent = true;
+                TerraMA2WebComponents.MapDisplay.zoomToExtent([$("#extent-one").val(), $("#extent-two").val(), $("#extent-three").val(), $("#extent-four").val()]);
+                searchExtent = false;
+              }
+            }
+          }
+        });
+      };
 
       TerraMA2WebComponents.MapDisplay.setLayersStartLoadingFunction(function() {
-        if($('#loading-span').hasClass('hide')) $('#loading-span').removeClass('hide');
+        if($('#loading-span').hasClass('hide')) 
+          $('#loading-span').removeClass('hide');
       });
 
       TerraMA2WebComponents.MapDisplay.setLayersEndLoadingFunction(function() {
-        if(!$('#loading-span').hasClass('hide')) $('#loading-span').addClass('hide');
+        if(!$('#loading-span').hasClass('hide')) 
+          $('#loading-span').addClass('hide');
+      });
+
+      TerraMA2WebComponents.MapDisplay.setZoomDragBoxDuringEvent(function() {
+          openDragboxDialog(TerraMA2WebComponents.MapDisplay.getZoomDragBoxExtent());
       });
 
       TerraMA2WebComponents.MapDisplay.setZoomDragBoxEndEvent(function() {
-        var dragBoxExtent = TerraMA2WebComponents.MapDisplay.getZoomDragBoxExtent();
-
-        vex.dialog.alert({
-          className: 'vex-theme-default export-dialog',
-          message: 
-          '<div class="component-filter">' +
-            '<div class="component-filter-title">Área de seleção:</div>' +
-            '<div class="component-filter-content" style="max-height: ' + ($(window).outerHeight() - 212) + 'px;">' +
-              '<div class="form-horizontal">' +
-                '<div class="form-group bdqueimadas-form">' +
-                  '<input type="text" id="extent-four" style="margin-left: 28%; margin-bottom: 10px;" value="' + dragBoxExtent[3] + '"/>' +
-                  '<input type="text" id="extent-one" style="margin-left: 16px;" value="' + dragBoxExtent[0] + '"/>' +
-                  '<input type="text" id="extent-three" style="margin-right: 16px; float: right;" value="' + dragBoxExtent[2] + '"/>' +
-                  '<input type="text" id="extent-two" style="margin-left: 28%; margin-top: 10px;" value="' + dragBoxExtent[1] + '"/>' +
-                '</div>' +
-              '</div>' +
-              '<div class="clear" style="height: 5px;"></div>' +
-            '</div>' +
-          '</div>',
-          buttons: [
-            {
-              type: 'submit',
-              text: 'Cancelar',
-              className: 'bdqueimadas-btn'
-            },
-            {
-              type: 'submit',
-              text: 'Filtrar',
-              className: 'bdqueimadas-btn',
-              click: function() {
-                TerraMA2WebComponents.MapDisplay.zoomToExtent([$('#extent-one').val(), $('#extent-two').val(), $('#extent-three').val(), $('#extent-four').val()]);
-                updateComponents();
-                vex.close();
-              }
-            }
-          ]
-        });
+        TerraMA2WebComponents.MapDisplay.zoomToExtent([$("#extent-one").val(), $("#extent-two").val(), $("#extent-three").val(), $("#extent-four").val()]);
+        openDragboxDialog(TerraMA2WebComponents.MapDisplay.getZoomDragBoxExtent());
       });
 
       TerraMA2WebComponents.MapDisplay.setMapResolutionChangeEvent(function() {
@@ -1317,21 +1481,18 @@ define(
         if(Filter.isInitialFilter())
           Filter.setInitialFilterToFalse();
 
-          console.log('dbl click event');
-          console.log('test');
-
-          $.ajax({
-            url: Utils.getBaseUrl() + "databyintersection",
-            type: "GET",
-            data: {
-              longitude: longitude,
-              latitude: latitude,
-              resolution: TerraMA2WebComponents.MapDisplay.getCurrentResolution()
-            },
-            success: function(result) {
-              dataByIntersectionRes(result);
-            }
-          });
+        $.ajax({
+          url: Utils.getBaseUrl() + "databyintersection",
+          type: "GET",
+          data: {
+            longitude: longitude,
+            latitude: latitude,
+            resolution: TerraMA2WebComponents.MapDisplay.getCurrentResolution()
+          },
+          success: function(result) {
+            dataByIntersectionRes(result);
+          }
+        });
       });
 
       TerraMA2WebComponents.MapDisplay.setLayerVisibilityChangeEvent(function(layerId) {
@@ -1649,6 +1810,42 @@ define(
         }
       });
     };**/
+
+
+       /**
+     * Function to add marker on specific point of map
+     *
+     * @private
+     * @function addMarkerToMap
+     * @memberof BDQueimadas
+     * @inner
+     */
+    var addMarkerToMap = function(params) {
+      if(markers)
+        Map.getMap().removeLayer(markers); 
+
+      markers = new ol.layer.Vector({
+        source: new ol.source.Vector({
+          features: [
+            new ol.Feature({
+              geometry: new ol.geom.Point(ol.proj.fromLonLat([parseFloat(params.lng), parseFloat(params.lat)], 'EPSG:4326', 'EPSG:3857')),
+            })
+          ]
+        }),
+        style: new ol.style.Style({
+          image: new ol.style.Icon({
+            anchor: [0.5, 46],
+            anchorXUnits: 'fraction',
+            anchorYUnits: 'pixel',
+            opacity: 1,
+            src: Utils.getBaseUrl() + 'images/maptool/latlngMarker.png'
+          })
+        })
+      });
+
+      var mapa = Map.getMap();
+      Map.getMap().addLayer(markers);
+    };
 
     /**
      * Clears the cql filter of the UCFs layers.
@@ -1991,19 +2188,26 @@ define(
         source: function(request, response) {
           var countriesAndStates = getSpatialData(0);
 
-          $.ajax({
-            url: Utils.getBaseUrl() + "search-for-cities",
-            dataType: "json",
-            data: {
-              minLength: 2,
-              value: request.term,
-              countries: countriesAndStates.countries,
-              states: countriesAndStates.states
-            },
-            success: function(data) {
-              response(data);
-            }
-          });
+          if(countriesAndStates.countries === "" || countriesAndStates.states === "") {
+            $("#filter-error-search-city").html('É necessário selecionar país e estado antes de filtrar pelo município - corrigir!');
+            setTimeout(function() {$('#city').val("")}, 500);
+          }
+          else {
+            $("#filter-error-search-city").html('');
+            $.ajax({
+              url: Utils.getBaseUrl() + "search-for-cities",
+              dataType: "json",
+              data: {
+                minLength: 2,
+                value: request.term,
+                countries: countriesAndStates.countries,
+                states: countriesAndStates.states
+              },
+              success: function(data) {
+                response(data);
+              }
+            });
+          }
         },
         select: function(event, ui) {
           event.preventDefault();
@@ -2026,19 +2230,26 @@ define(
         source: function(request, response) {
           var countriesAndStates = getSpatialData(1);
 
-          $.ajax({
-            url: Utils.getBaseUrl() + "search-for-cities",
-            dataType: "json",
-            data: {
-              minLength: 2,
-              value: request.term,
-              countries: countriesAndStates.countries,
-              states: countriesAndStates.states
-            },
-            success: function(data) {
-              response(data);
-            }
-          });
+          if(countriesAndStates.countries === "" || countriesAndStates.states === "") {
+            $("#filter-error-search-city-table").html('É necessário selecionar país e estado antes de pesquisar o município - corrigir!');
+            setTimeout(function() {$('#city-attributes-table').val("")}, 500);
+          }
+          else {
+            $("#filter-error-search-city-table").html('');
+            $.ajax({
+              url: Utils.getBaseUrl() + "search-for-cities",
+              dataType: "json",
+              data: {
+                minLength: 2,
+                value: request.term,
+                countries: countriesAndStates.countries,
+                states: countriesAndStates.states
+              },
+              success: function(data) {
+                response(data);
+              }
+            });
+          }
         },
         select: function(event, ui) {
           event.preventDefault();
@@ -2326,7 +2537,6 @@ define(
         updateSizeVars();
         setReducedContentSize(300);
         loadEvents();
-        //loadSocketsListeners();
         loadPlugins();
 
         TerraMA2WebComponents.MapDisplay.updateMapSize();

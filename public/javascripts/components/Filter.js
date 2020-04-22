@@ -809,9 +809,9 @@ define(
             (dateFrom <= satelliteReferenceBegin && dateTo >= satelliteReferenceBegin) || 
             (dateFrom <= satelliteReferenceEnd && dateTo >= satelliteReferenceEnd)) {
             if(Utils.stringInArray(selectedOptions, satellitesList[i].Id)) {
-              referenceSatellite += "<option value=\"" + satellitesList[i].Id + "\" selected>Refer. (" + satellitesList[i].Name + ")</option>";
+              referenceSatellite += "<option value=\"" + satellitesList[i].Id + "\" selected>Satélite de referência (" + satellitesList[i].Name + ")</option>";
             } else {
-              referenceSatellite += "<option value=\"" + satellitesList[i].Id + "\">Refer. (" + satellitesList[i].Name + ")</option>";
+              referenceSatellite += "<option value=\"" + satellitesList[i].Id + "\">Satélite de referência (" + satellitesList[i].Name + ")</option>";
             }
           } else {
             if(Utils.stringInArray(selectedOptions, satellitesList[i].Id)) {

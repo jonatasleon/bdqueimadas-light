@@ -138,7 +138,7 @@ define(
                                        "<div class=\"box-body\" style=\"display: block;\"><div class=\"chart\">" +
                                        "<canvas id=\"fires-count-" + firesCountGraphicsConfig[i].Id + "-graphic\"></canvas>" +
                                        "<a href=\"#\" class=\"btn btn-app graphic-button export-graphic-data\" data-id=\"" + firesCountGraphicsConfig[i].Id +
-                                       "\"><i class=\"fa fa-download\"></i>Exportar Dados em CSV</a>";
+                                       "\"><i class=\"fa fa-download\"></i>Exportar Todos os Dados em CSV</a>";
 
                     htmlElements += "<div id=\"fires-count-" + firesCountGraphicsConfig[i].Id +
                                     "-graphic-message-container\" class=\"text-center\">" +
@@ -151,7 +151,7 @@ define(
                                        "<div class=\"box-body\" style=\"display: none;\"><div class=\"chart\">" +
                                        "<canvas id=\"fires-count-" + firesCountGraphicsConfig[i].Id + "-graphic\"></canvas>" +
                                        "<a href=\"#\" class=\"btn btn-app graphic-button export-graphic-data\" data-id=\"" + firesCountGraphicsConfig[i].Id +
-                                       "\"><i class=\"fa fa-download\"></i>Exportar Dados em CSV</a>";
+                                       "\"><i class=\"fa fa-download\"></i>Exportar Todos os Dados em CSV</a>";
 
                     htmlElements += "<div id=\"fires-count-" + firesCountGraphicsConfig[i].Id + "-graphic-message-container\" class=\"text-center\"></div></div></div></div>";
                   }
@@ -351,7 +351,7 @@ define(
       $("#fires-count-" + firesCount.id + "-graphic").parent().children('.export-graphic-data').show();
       $("#fires-count-" + firesCount.id + "-graphic").parents('.graphic-item').show();
 
-      if(firesCount.firesCount.rowCount <= 1) hideGraphic(firesCount.id);
+      if(firesCount.firesCount.rowCount <= 1 && firesCount.id == 'firesByCountry') hideGraphic(firesCount.id);
       else if(firesCount.filterRules.showOnlyIfThereIsACountryFiltered && memberCountries === '') hideGraphic(firesCount.id);
       else if(firesCount.filterRules.showOnlyIfThereIsNoCountryFiltered && memberCountries !== '') hideGraphic(firesCount.id);
       else if(firesCount.filterRules.showOnlyIfThereIsAStateFiltered && memberStates === '') hideGraphic(firesCount.id);
@@ -361,6 +361,11 @@ define(
       else $('#graphics-no-data').show();
 
       memberFiresCountGraphics[firesCount.id].resize();
+
+      $(".graphic-item > .box-header").on('click', function() {
+        var toggleBtn = $(this)[0].lastChild.lastChild;
+        if(toggleBtn) toggleBtn.click();
+      });
     };
 
     /**

@@ -46,6 +46,18 @@ define(
     };
 
     /**
+     * Returns the instance of ol map
+     * @returns {object} map
+     * 
+     * @function getMap
+     * @memberof Map
+     * @inner
+     */
+    var getMap = function() {
+      return TerraMA2WebComponents.MapDisplay.getMap();
+    };
+
+    /**
      * Adds a layer to the visible layers array.
      * @param {string} layerId - Layer id
      * @param {string} layerName - Layer name
@@ -796,6 +808,7 @@ define(
     };
 
     return {
+      getMap: getMap,
       getLayers: getLayers,
       getNotAddedLayers: getNotAddedLayers,
       addVisibleLayer: addVisibleLayer,
