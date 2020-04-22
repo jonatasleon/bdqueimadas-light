@@ -656,6 +656,18 @@ define(function() {
     return memberBaseUrl;
   };
 
+    /**
+   * Returns the Exportation Url.
+   * @returns {string} memberExportationUrl - Exportation Url
+   *
+   * @function getExportationUrl
+   * @memberof Utils
+   * @inner
+   */
+  var getExportationUrl = function() {
+    return memberExportationUrl;
+  };
+
   /**
    * Sums the items of an integer array.
    * @param {array} values - Integer array
@@ -814,6 +826,7 @@ define(function() {
     areArraysEqual: areArraysEqual,
     getStateIds: getStateIds,
     getBaseUrl: getBaseUrl,
+    getExportationUrl: getExportationUrl,
     sumIntegerArrayItems: sumIntegerArrayItems,
     sumTwoStringIntegers: sumTwoStringIntegers,
     getCurrentDate: getCurrentDate,
