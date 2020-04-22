@@ -11,7 +11,7 @@ requirejs(
     TerraMA2WebComponents.LayerExplorer.init();
     TerraMA2WebComponents.MapDisplay.init();
 
-    Utils.init(configurations, BASE_URL);
+    Utils.init(configurations, BASE_URL, EXPORTATION_URL);
     BDQueimadas.init();
     Filter.init();
     AttributesTable.init();
