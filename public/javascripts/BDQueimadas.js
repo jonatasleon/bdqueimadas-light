@@ -672,6 +672,11 @@ define(
         $('#countries-attributes-table').change();
 
         $('#filter-button').click();
+
+        var statesLayerField = $("#" + Utils.getConfigurations().filterConfigurations.StatesLayer.Id.replace(':', '') + " > input");
+        if((!statesLayerField.is(':checked')) || 
+           (statesLayerField.is(':checked') && ($('#countries').val() == null || $('#countries').val() == undefined)))
+          statesLayerField.click();
       });
 
       $('#states').change(function() {
@@ -685,6 +690,13 @@ define(
         $('#states-attributes-table').change();
 
         $('#filter-button').click();
+
+        var citiesLayerField = $("#" + Utils.getConfigurations().filterConfigurations.CitiesLayer.Id.replace(':', '') + " > input");
+        
+        if(!citiesLayerField.is(':checked') || 
+          (citiesLayerField.is(':checked') && ($('#states').val() == null || $('#states').val() == undefined))) {
+          citiesLayerField.click();
+        }
       });
 
       $('#countries-graphics').change(function() {
@@ -1521,7 +1533,7 @@ define(
             Filter.setCountries(result.ids);
             Filter.clearStates();
 
-            Utils.getSocket().emitold('statesByCountriesRequest', { countries: result.ids });
+            Utils.getSocket().emit('statesByCountriesRequest', { countries: result.ids });
 
             Filter.enableDropdown('countries', result.ids);
 
