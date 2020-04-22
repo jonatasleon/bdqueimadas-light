@@ -799,7 +799,7 @@ define(function() {
    * @memberof Utils
    * @inner
    */
-  var init = function(configurations, baseUrl) {
+  var init = function(configurations, baseUrl, exportationUrl) {
     memberConfigurations = configurations;
     memberBaseUrl = baseUrl;
     memberExportationUrl = exportationUrl;
