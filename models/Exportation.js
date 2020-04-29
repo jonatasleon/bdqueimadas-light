@@ -50,7 +50,7 @@ var Exportation = function() {
     * @inner
     */
    this.getPgConnectionString = function() {
-     var connectionString = "PG:host=" + memberDatabaseConfigurations.Host + " port=" + memberDatabaseConfigurations.Port + " user=" + memberDatabaseConfigurations.User + " dbname=" + memberDatabaseConfigurations.Database;
+     var connectionString = "PG:host=" + memberDatabaseConfigurations.Host + " port=" + memberDatabaseConfigurations.Port + " user=" + memberDatabaseConfigurations.User + " dbname=" + memberDatabaseConfigurations.Database + " password=" +memberDatabaseConfigurations.Password;
 
      return connectionString;
    };
@@ -145,7 +145,6 @@ var Exportation = function() {
   this.getQuery = function(selectGeometry, dateTimeFrom, dateTimeTo, options) {
     // Setting of the query columns string
     var columns = "";
-
     for(var i = 0, columnsLength = memberAttributesTableConfig.Columns.length; i < columnsLength; i++) {
       var columnName = (memberAttributesTableConfig.Columns[i].TableAlias !== null ? memberAttributesTableConfig.Columns[i].TableAlias + "." + memberAttributesTableConfig.Columns[i].Name : memberAttributesTableConfig.Columns[i].Name);
       columnName = (memberAttributesTableConfig.Columns[i].UnaccentAtExportation ? "unaccent(" + columnName + ")" : columnName);
