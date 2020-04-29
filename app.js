@@ -16,7 +16,6 @@ var express = require('express'),
 var applicationConfigurations = JSON.parse(fs.readFileSync(path.join(__dirname, './configurations/Application.json'), 'utf8'));
 
 BASE_URL = applicationConfigurations.BaseUrl;
-EXPORTATION_URL = applicationConfigurations.ExportationUrl;
 
 app.use(compression());
 app.use(cookieParser());

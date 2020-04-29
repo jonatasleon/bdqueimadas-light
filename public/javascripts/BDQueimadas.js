@@ -166,12 +166,6 @@ define(
           message: '<div class="component-filter">' +
             '<div class="component-filter-title">Confirme abaixo os filtros da exportação.</div>' +
             '<div class="component-filter-content" style="max-height: ' + ($(window).outerHeight() - 212) + 'px;">' +
-              '<div class="form-group bdqueimadas-form">' +
-                '<label for="continents-export" class="col-sm-3 control-label" style="text-align: left;">Email</label>' +
-                '<div class="col-sm-9">' +
-                  '<input type="email" class="form-control" placeholder="Email" name="email" id="email">' +
-                '</div>' +
-              '</div>' +
               '<span class="help-block component-filter-error" id="filter-error-export-email"></span>' +
               '<div class="form-group bdqueimadas-form">' +
                 '<div class="float-left" style="width: 200px;">' +
@@ -250,10 +244,7 @@ define(
               '<span class="help-block component-filter-error" id="filter-error-export-type"></span>' +
               '<span class="help-block component-filter-error" id="filter-error-export-main"></span>' +
             '</div>' +
-          '</div>'+
-          '<script src="https://www.google.com/recaptcha/api.js"></script>' +
-          '<span class="help-block component-filter-error" id="filter-error-export-recaptcha"></span>' +
-          '<div class="g-recaptcha" data-sitekey="6LeaJLkUAAAAAH1WoO9aNcuYD9Ck4ScycnWpPtR2"></div></div>',
+          '</div>',
           buttons: [
             {
               type: 'submit',
@@ -275,16 +266,12 @@ define(
                     }]
                   });
                 } else {
-                  $("#filter-error-export-email").text('');
-                  $("#filter-error-export-recaptcha").text('');
                   $("#filter-error-export-dates").text('');
                   $("#filter-error-export-satellite").text('');
                   $("#filter-error-export-biome").text('');
                   $("#filter-error-export-type").text('');
 
-                  var google_recaptcha = grecaptcha.getResponse();
-                  grecaptcha.reset();
-
+                
                   if($("#filter-date-to-export").datepicker('getDate') !== null && $("#filter-date-from-export").datepicker('getDate') !== null) {
                     var timeDiffBetweenDates = Math.abs($("#filter-date-to-export").datepicker('getDate').getTime() - $("#filter-date-from-export").datepicker('getDate').getTime());
                     var diffDaysBetweenDates = Math.ceil(timeDiffBetweenDates / (1000 * 3600 * 24));
@@ -313,11 +300,6 @@ define(
                     $("#filter-error-export-dates").text('Horas inválidas!');
                     $("#filter-time-from-expor").val('');
                     $("#filter-time-to-expor").val('');
-                  } else if(!Utils.emailIsValid($("#email").val())){
-                    $("#filter-error-export-email").text('Email inválido!');
-                    $("#email").val('');
-                  } else if (google_recaptcha === ""){
-                    $("#filter-error-export-recaptcha").text('Clique em "Não sou um robô"');
                   } else if($("#filter-time-from-export").val() === "" || !Utils.isTimeValid($("#filter-time-from-export").val())) {
                     $("#filter-error-export-dates").text('Hora inicial inválida!');
                     $("#filter-time-from-expor").val('');
@@ -335,37 +317,23 @@ define(
                   } else {
                     var exportationSpatialFilterData = getSpatialData(2);
 
-                    var parametersExport = {
+                    var dataParams = {
                       dateTimeFrom: Utils.dateToString(Utils.stringToDate($('#filter-date-from-export').val(), 'YYYY/MM/DD'), Utils.getConfigurations().firesDateFormat) + ' ' + $('#filter-time-from-export').val() + ':00',
                       dateTimeTo: Utils.dateToString(Utils.stringToDate($('#filter-date-to-export').val(), 'YYYY/MM/DD'), Utils.getConfigurations().firesDateFormat) + ' ' + $('#filter-time-to-export').val() + ':59',
                       satellites: (Utils.stringInArray($('#filter-satellite-export').val(), "all") ? '' : $('#filter-satellite-export').val().toString()),
                       biomes: (Utils.stringInArray($('#filter-biome-export').val(), "all") ? '' : $('#filter-biome-export').val().toString()),
-                      continent: exportationSpatialFilterData.continent,
                       countries: exportationSpatialFilterData.countries,
                       states: exportationSpatialFilterData.states,
-                      cities: exportationSpatialFilterData.cities,
-                      specialRegions: "",
-                      protectedArea: ($('#pas-export').data('value') !== undefined && $('#pas-export').data('value') !== '' ? JSON.parse($('#pas-export').data('value')) : null),
-                      industrialFires: "false",
-                      bufferInternal: "false",
-                      bufferFive: "false",
-                      bufferTen: "false",
-                      recaptcha: google_recaptcha,
-                      email: $('#email').val(),
-                      format: $('#exportation-type').val()
-                    };
-  
-                    var exportarResponse = function (result){
-                      vex.dialog.alert({
-                        message: '<p style="font-weight: bold; font-size: 20px;">' + result.responseText + '</p>'
-                      });
+                      cities: exportationSpatialFilterData.cities
                     };
   
                     $.ajax({
-                      url: Utils.getExportationUrl() + 'exportar',
-                      data: { data: JSON.stringify(parametersExport) },
-                      complete: exportarResponse,
-                      crossDomain: true
+                      url: Utils.getBaseUrl() + "existsdatatoexport",
+                      type: "GET",
+                      data: dataParams,
+                      success: function(result) {
+                        existsDataToExportRes(result);
+                      }
                     });
                   }
                 }
@@ -2436,6 +2404,83 @@ define(
     }
 
     /**
+     * Function to be executed after existsdatatoexport request
+     *
+     * @private
+     * @function existsDataToExport
+     * @memberof BDQueimadas
+     * @inner
+     */
+    var existsDataToExportRes = function(result) {
+      if(result.existsDataToExport) {
+        var exportationSpatialFilterData = getSpatialData(2);
+
+        memberFilterExport = {
+          dateTimeFrom: Utils.dateToString(Utils.stringToDate($('#filter-date-from-export').val(), 'YYYY/MM/DD'), Utils.getConfigurations().firesDateFormat) + ' ' + $('#filter-time-from-export').val() + ':00',
+          dateTimeTo: Utils.dateToString(Utils.stringToDate($('#filter-date-to-export').val(), 'YYYY/MM/DD'), Utils.getConfigurations().firesDateFormat) + ' ' + $('#filter-time-to-export').val() + ':59',
+          satellites: $('#filter-satellite-export').val().toString(),
+          biomes: $('#filter-biome-export').val().toString(),
+          countries: exportationSpatialFilterData.countries,
+          countriesHtml: $('#countries-export').html(),
+          states: exportationSpatialFilterData.states.concat(exportationSpatialFilterData.specialRegions),
+          statesHtml: $('#states-export').html(),
+          cities: exportationSpatialFilterData.cities,
+          cityLabel: $('#city-export').val(),
+          format: $("#exportation-type").val().toString(),
+          decimalSeparator: $('input[name=decimalSeparator]:checked').val(),
+          fieldSeparator: $('input[name=fieldSeparator]:checked').val()
+        };
+
+        var exportData = {
+          dateTimeFrom: Utils.dateToString(Utils.stringToDate($('#filter-date-from-export').val(), 'YYYY/MM/DD'), Utils.getConfigurations().firesDateFormat) + ' ' + $('#filter-time-from-export').val() + ':00',
+          dateTimeTo: Utils.dateToString(Utils.stringToDate($('#filter-date-to-export').val(), 'YYYY/MM/DD'), Utils.getConfigurations().firesDateFormat) + ' ' + $('#filter-time-to-export').val() + ':59',
+          satellites: (Utils.stringInArray($('#filter-satellite-export').val(), "all") ? '' : $('#filter-satellite-export').val().toString()),
+          biomes: (Utils.stringInArray($('#filter-biome-export').val(), "all") ? '' : $('#filter-biome-export').val().toString()),
+          countries: exportationSpatialFilterData.countries,
+          states: exportationSpatialFilterData.states,
+          cities: exportationSpatialFilterData.cities,
+          format: $("#exportation-type").val().toString(),
+        };
+
+        if(Utils.stringInArray($('#exportation-type').val(), 'csv')) {
+          exportData.decimalSeparator = $('input[name=decimalSeparator]:checked').val();
+          exportData.fieldSeparator = $('input[name=fieldSeparator]:checked').val();
+        }
+
+        memberExportationInProgress = true;
+        
+        $.ajax({
+          url: Utils.getBaseUrl() + "generatefile",
+          type: "GET",
+          data: exportData,
+          success: function(result) {
+            generateFileRes(result);
+          }
+        });
+
+        //Utils.getSocket().emit('generateFileRequest', exportData);
+        //$('#exportation-status > div > span').html('Preparando os dados para a exportação<span>...</span>');
+        $('#exportation-status > div > span').html('Exportando arquivo. Por favor, aguarde<span>...</span>');
+
+        vex.close();
+      } else {
+        vex.dialog.alert({
+          message: '<p class="text-center">Não existem dados para exportar!</p>',
+          buttons: [{
+            type: 'submit',
+            text: 'Ok',
+            className: 'bdqueimadas-btn'
+          }]
+        });
+
+        $('#exportation-status').addClass('hidden');
+        window.clearInterval(memberExportationTextTimeout);
+        memberExportationTextTimeout = null;
+        $('#exportation-status > div > span').html('');
+      }
+    }
+
+    /**
      * Update data after http requests for continents, countries and states
      *
      * @private
@@ -2551,6 +2596,47 @@ define(
         //$('#filter-button-graphics').click();
       } else if(result.filter !== null && result.filter !== undefined && result.filter === 3) {
         $('#states-export').removeAttr('disabled');
+      }
+    }
+
+        /**
+     * Function to be executed after export request
+     *
+     * @private
+     * @function generateFileRes
+     * @memberof BDQueimadas
+     * @inner
+     */
+    var generateFileRes = function(result) {
+      if(result.progress !== undefined && result.progress >= 100) {
+        $('#exportation-status > div > span').html('Quase lá! O arquivo está sendo preparado para o download<span>...</span>');
+        $('#exportation-status > div > div').addClass('hidden');
+
+        $('#exportation-status > div > div > div > span').text('0% Completo');
+        $('#exportation-status > div > div > div').css('width', '0%');
+        $('#exportation-status > div > div > div').attr('aria-valuenow', 0);
+      } else if(result.progress !== undefined) {
+        if($('#exportation-status > div > div').hasClass('hidden')) {
+          $('#exportation-status > div > span').html('Aguarde, os dados solicitados estão sendo exportados<span>...</span>');
+          $('#exportation-status > div > div').removeClass('hidden');
+        }
+
+        $('#exportation-status > div > div > div > span').text(result.progress + '% Completo');
+        $('#exportation-status > div > div > div').css('width', result.progress + '%');
+        $('#exportation-status > div > div > div').attr('aria-valuenow', result.progress);
+      } else {
+        memberExportationInProgress = false;
+        $('#exportation-status').addClass('hidden');
+        window.clearInterval(memberExportationTextTimeout);
+        memberExportationTextTimeout = null;
+        $('#exportation-status > div > span').html('');
+        $('#exportation-status > div > div').addClass('hidden');
+        $('#exportation-status > div > div > div > span').text('0% Completo');
+        $('#exportation-status > div > div > div').css('width', '0%');
+
+        var exportLink = Utils.getBaseUrl() + "export?folder=" + result.folder + "&file=" + result.file;
+
+        $('#exportation-iframe').attr('src', exportLink);
       }
     }
 
