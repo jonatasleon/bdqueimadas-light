@@ -16,9 +16,9 @@ var ProtectedAreaController = function(app) {
     var getProtectedAreaExtent = function(req, res) {
         var params = memberUtils.parseToBool(req.query);
 
-        memberFilter.getProtectedAreaExtent(params.id, params.ngo, params.type, function(err, extent) {
+        memberFilter.getProtectedAreaExtent(params.id, function(err, extent) {
           if(err) return console.error(err);
-          res.json({ key: params.key, id: params.id, type: params.type, extent: extent });
+          res.json({ key: params.key, id: params.id, extent: extent });
         });
     }
 

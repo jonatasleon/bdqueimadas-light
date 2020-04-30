@@ -1889,11 +1889,10 @@ define(
           if(data.length > 0) {
             var cqlUCF = Utils.getConfigurations().filterConfigurations.ProtectedAreas.UCF.IdField + "=" + data[0].value.id;
 
-            if(!$('#' + Utils.getConfigurations().filterConfigurations.ProtectedAreas.UCF.LayerName.replace(':', '') + ' > input').is(":checked"))
+            if($('#' + Utils.getConfigurations().filterConfigurations.ProtectedAreas.UCF.LayerName.replace(':', '') + ' > input').is(":checked"))
               $('#' + Utils.getConfigurations().filterConfigurations.ProtectedAreas.UCF.LayerName.replace(':', '') + ' > input').click();
-
+              
             Filter.applyCqlFilterToLayer(cqlUCF, Utils.getConfigurations().filterConfigurations.ProtectedAreas.UCF.LayerName);
-
             $('#pas').val(data[0].label);
 
             $.ajax({
@@ -2377,10 +2376,6 @@ define(
      * @param {*} result 
      */
     var dataByIntersectionRes = function(result) {
-      console.log('data rows data by intersec');
-      console.log(result.data.rows[0]);
-
-
       if(result.data.rows.length > 0) {
         if(result.data.rows[0].key === "States") {
           var index = $('#states').val() !== null ? $('#states').val().indexOf("0") : -1;
@@ -2546,6 +2541,15 @@ define(
 
           var arrayOne = JSON.parse(JSON.stringify(statesArray));
           Filter.enableDropdown('states', arrayOne);
+        }
+
+        else if(result.key == 'ProtectedArea') {
+          var isChecked = $('#' + Utils.getConfigurations().filterConfigurations.ProtectedAreas.UCF.LayerName.replace(':', '') + ' > input').is(":checked");
+
+            if($('#' + Utils.getConfigurations().filterConfigurations.ProtectedAreas.UCF.LayerName.replace(':', '') + ' > input').is(":checked")) {
+              $('#' + Utils.getConfigurations().filterConfigurations.ProtectedAreas.UCF.LayerName.replace(':', '') + ' > input').click();
+              $('#' + Utils.getConfigurations().filterConfigurations.ProtectedAreas.UCF.LayerName.replace(':', '') + ' > input').click();
+            }
         }
       } else {
         TerraMA2WebComponents.MapDisplay.zoomToInitialExtent();
