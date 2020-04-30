@@ -2448,7 +2448,7 @@ define(
         }
 
         memberExportationInProgress = true;
-        
+
         $.ajax({
           url: Utils.getBaseUrl() + "generatefile",
           type: "GET",
@@ -2458,11 +2458,25 @@ define(
           }
         });
 
-        //Utils.getSocket().emit('generateFileRequest', exportData);
-        //$('#exportation-status > div > span').html('Preparando os dados para a exportação<span>...</span>');
-        $('#exportation-status > div > span').html('Exportando arquivo. Por favor, aguarde<span>...</span>');
+        $('#exportation-status > div > span').html('Preparando os dados para exportação, aguarde<span>...</span>');
 
+        memberExportationTextTimeout = setInterval(function() {
+          var text = $('#exportation-status > div > span > span').html();
+
+          if(text === "...")
+            $('#exportation-status > div > span > span').html('&nbsp;&nbsp;&nbsp;');
+          else if(text === "..&nbsp;")
+            $('#exportation-status > div > span > span').html('...');
+          else if(text === ".&nbsp;&nbsp;")
+            $('#exportation-status > div > span > span').html('..&nbsp;');
+          else
+            $('#exportation-status > div > span > span').html('.&nbsp;&nbsp;');
+        }, 800);
+
+
+        $('#exportation-status').removeClass('hidden');
         vex.close();
+
       } else {
         vex.dialog.alert({
           message: '<p class="text-center">Não existem dados para exportar!</p>',
