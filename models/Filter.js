@@ -518,7 +518,7 @@ var Filter = function() {
         }
 
         if(states !== null) {
-          var statesArray = states.length > 1 ? states.split(',') : states;
+          var statesArray = states.length > 1 && typeof(states) === "string" ? states.split(',') : states;
           query += " and b." + memberTablesConfig.States.IdFieldName + " in (";
 
           for(var i = 0, statesArrayLength = statesArray.length; i < statesArrayLength; i++) {

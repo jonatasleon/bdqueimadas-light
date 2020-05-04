@@ -1,7 +1,7 @@
 <div class="left-content-box" id="layer-explorer-and-filter-box">
   <div class="form-group bdqueimadas-form float-left">
     <label for="countries"><%= __('Países') %></label>
-    <select multiple id="countries" name="countries" class="form-control" style="width: 148px;">
+    <select id="countries" name="countries" class="form-control" style="width: 148px;">
       <option value="" selected><%= __('Todos os Países') %></option>
       <% countries.rows.forEach(function(country, index) { %>
         <option value="<%- country.id %>"><%- country.name %></option>

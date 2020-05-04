@@ -11,7 +11,7 @@
                 <div class="col-md-3">
                   <div class="form-group">
                     <label for="countries-attributes-table"><%= __('Países') %></label>
-                    <select multiple id="countries-attributes-table" name="countries-attributes-table" class="form-control">
+                    <select id="countries-attributes-table" name="countries-attributes-table" class="form-control">
                       <option value="" selected><%= __('Todos os Países') %></option>
                       <% countries.rows.forEach(function(country, index) { %>
                         <option value="<%- country.id %>"><%- country.name %></option>

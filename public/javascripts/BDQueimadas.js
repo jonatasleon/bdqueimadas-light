@@ -170,7 +170,7 @@ define(
               '<div class="form-group bdqueimadas-form">' +
                 '<div class="float-left" style="width: 200px;">' +
                   '<label for="countries-export">Países</label>' +
-                  '<select multiple id="countries-export" name="countries-export" class="form-control float-left">' + (memberFilterExport !== null ? memberFilterExport.countriesHtml : $('#countries').html()) + '</select>' +
+                  '<select id="countries-export" name="countries-export" class="form-control float-left">' + (memberFilterExport !== null ? memberFilterExport.countriesHtml : $('#countries').html()) + '</select>' +
                 '</div>' +
                 '<div class="float-right" style="width: 200px;">' +
                   '<label for="states-export">Estados</label>' +
@@ -323,7 +323,7 @@ define(
                       satellites: (Utils.stringInArray($('#filter-satellite-export').val(), "all") ? '' : $('#filter-satellite-export').val().toString()),
                       biomes: (Utils.stringInArray($('#filter-biome-export').val(), "all") ? '' : $('#filter-biome-export').val().toString()),
                       countries: exportationSpatialFilterData.countries,
-                      states: exportationSpatialFilterData.states,
+                      states: $('#states-export').val(),
                       cities: exportationSpatialFilterData.cities
                     };
   
@@ -694,7 +694,7 @@ define(
           $.ajax({
             url: Utils.getBaseUrl() + "statesbycountries",
             type: "GET",
-            data: { countries: $(this).val(), filter: 2 },
+            data: { countries: [$(this).val()], filter: 2 },
             success: function(result) {
               statesByCountriesRes(result);
             }
@@ -708,7 +708,7 @@ define(
           $.ajax({
             url: Utils.getBaseUrl() + "statesbycountries",
             type: "GET",
-            data: { countries: $(this).val(), filter: 1 },
+            data: { countries: [$(this).val()], filter: 1 },
             success: function(result) {
               statesByCountriesRes(result);
             }
@@ -880,7 +880,7 @@ define(
             $.ajax({
               url: Utils.getBaseUrl() + "statesbycountries",
               type: "GET",
-              data: { countries: $(this).val(), filter: 3 },
+              data: { countries: [$(this).val()], filter: 3 },
               success: function(result) {
                 statesByCountriesRes(result);
               }
@@ -2417,7 +2417,7 @@ define(
           biomes: $('#filter-biome-export').val().toString(),
           countries: exportationSpatialFilterData.countries,
           countriesHtml: $('#countries-export').html(),
-          states: exportationSpatialFilterData.states.concat(exportationSpatialFilterData.specialRegions),
+          states: exportationSpatialFilterData.states,
           statesHtml: $('#states-export').html(),
           cities: exportationSpatialFilterData.cities,
           cityLabel: $('#city-export').val(),

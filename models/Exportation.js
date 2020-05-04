@@ -143,6 +143,7 @@ var Exportation = function() {
    * @inner
    */
   this.getQuery = function(selectGeometry, dateTimeFrom, dateTimeTo, options) {
+    
     // Setting of the query columns string
     var columns = "";
     for(var i = 0, columnsLength = memberAttributesTableConfig.Columns.length; i < columnsLength; i++) {

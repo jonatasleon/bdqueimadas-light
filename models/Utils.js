@@ -89,7 +89,7 @@ var Utils = function() {
 
     // If the 'options.states' parameter exists, a states 'where' clause is created
     if(filterStates) {
-      var statesArray = options.states.split(',');
+      var statesArray = typeof(options.states) === "string" ? options.states.split(',') : options.states;
       query += " and (" + (options.tableAlias !== undefined ? options.tableAlias + "." : "") + memberTablesConfig.Fires.StateFieldName + " in (";
 
       for(var i = 0, statesArrayLength = statesArray.length; i < statesArrayLength; i++) {

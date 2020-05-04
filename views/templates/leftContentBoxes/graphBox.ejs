@@ -13,7 +13,7 @@
                 <div class="col-md-6">
                   <div class="form-group">
                     <label for="countries-graphics"><%= __('Países') %></label>
-                    <select multiple id="countries-graphics" name="countries-graphics" class="form-control">
+                    <select id="countries-graphics" name="countries-graphics" class="form-control">
                       <option value="" selected><%= __('Todos os Países') %></option>
                       <% countries.rows.forEach(function(country, index) { %>
                         <option value="<%- country.id %>"><%- country.name %></option>
