@@ -18,12 +18,7 @@ var CountriesByStatesController = function(app) {
 
         memberFilter.getCountriesByStates(json.states, function(err, countriesByStates) {
           if(err) return console.error(err);
-    
-          memberFilter.getCountriesByContinent(countriesByStates.rows[0].continent, function(err, countries) {
-            if(err) return console.error(err);
-            
-            res.json({ countriesByStates: countriesByStates, countries: countries });
-          });
+          res.json({ countriesByStates: countriesByStates });
         });
     }
 

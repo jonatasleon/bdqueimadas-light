@@ -48,6 +48,8 @@ define(
     var memberInitialSatellites = null;
     // Last filters used in the layers
     var memberLastFilters = {};
+    // Member filter export
+    var memberFilterExport = null;
 
     /**
      * Returns the initial date formatted with the received format.
@@ -675,6 +677,7 @@ define(
           var cqlFilter = Utils.getConfigurations().filterConfigurations.CitiesLayer.CountryField + " in (";
           var cqlFilterOneCity = Utils.getConfigurations().filterConfigurations.CitiesLayer.CityField + "='";
 
+
           if($('#states').val() !== null) {
             var states = $('#states').val();
             var index = states.indexOf("0");
@@ -706,9 +709,11 @@ define(
               var filterCities = false;
 
               if(memberStatesLength > 0) {
+                //var ids = Utils.getStateIds(memberStates[count]);
+                //cqlFilter += ids[0] + ",";
+                cqlFilter += memberCountries[0] + ",";
+
                 for(var count = 0; count < memberStatesLength; count++) {
-                  var ids = Utils.getStateIds(memberStates[count]);
-                  cqlFilter += ids[0] + ",";
                   statesCqlFilter += "'" + memberStates[count] + "',";
                 }
 
@@ -836,6 +841,174 @@ define(
         }
       }
     };
+
+     /**
+     * Update data after http requests
+     *
+     * @private
+     * @function processData
+     * @memberof BDQueimadas
+     * @inner
+     */
+    var processData = function(result) {
+      if(result.extent.rowCount > 0 && result.extent.rows[0].extent !== null) {
+        var extent = result.extent.rows[0].extent.replace('BOX(', '').replace(')', '').split(',');
+        var extentArray = extent[0].split(' ');
+        extentArray = extentArray.concat(extent[1].split(' '));
+        TerraMA2WebComponents.MapDisplay.zoomToExtent(extentArray);
+
+      if(result.key === 'Countries') {
+          setCountries(result.ids);
+          clearStates();
+
+          $.ajax({
+            url: Utils.getBaseUrl() + "statesbycountries",
+            type: "GET",
+            data: { countries: result.ids },
+            success: function(result) {
+              statesByCountriesRes(result);
+            }
+          });
+
+          enableDropdown('countries', result.ids);
+
+          var index = $('#states').val() !== null ? $('#states').val().indexOf("0") : -1;
+
+          if(index > -1) {
+            enableDropdown('states', ['', '0']);
+          } else {
+            enableDropdown('states', '');
+          }
+        } else if(result.key === 'States') {
+          /*if(result.ids.length && result.ids[0].length === 0) {
+            result.ids = [];
+          }*/
+
+          setStates(result.ids);
+          var statesArray = JSON.parse(JSON.stringify(result.ids));
+
+          if($('#states').val() !== null) {
+            var index = $('#states').val().indexOf("0");
+            if(index > -1) statesArray.push("0");
+          }
+
+          var arrayOne = JSON.parse(JSON.stringify(statesArray));
+          var arrayTwo = JSON.parse(JSON.stringify(result.specialRegions));
+
+          enableDropdown('states', $.merge(arrayOne, arrayTwo));
+        }
+      } else {
+        TerraMA2WebComponents.MapDisplay.zoomToInitialExtent();
+      }
+
+      applyFilter();
+      //updateComponents();
+    };
+
+    var countriesByStatesRes = function(result) {
+      var countriesIds = [];
+
+        for(var i = 0; i < result.countriesByStates.rowCount; i++) {
+          countriesIds.push(result.countriesByStates.rows[i].id);
+        }
+
+        setCountries(countriesIds);
+
+        $.ajax({
+          url: Utils.getBaseUrl() + "statesbycountries",
+          type: "GET",
+          data: { countries: countriesIds },
+          success: function(result) {
+            statesByCountriesRes(result);
+          }
+        });
+
+        var html = "<option value=\"\" selected>Todos os pa&iacute;ses</option>",
+            countriesCount = result.countries.rowCount;
+
+        for(var i = 0; i < countriesCount; i++) {
+          var countryName = result.countries.rows[i].name;
+
+          if(result.countries.rows[i].name === "Falkland Islands") {
+            countryName = "I.Malvinas/Falkland";
+          } else if(result.countries.rows[i].name === "Brazil") {
+            countryName = "Brasil";
+          }
+
+          html += "<option value='" + result.countries.rows[i].id + "'>" + countryName + "</option>";
+        }
+
+        $('#countries').empty().html(html);
+
+        enableDropdown('countries', countriesIds);
+
+        if(memberFilterExport !== null) {
+          memberFilterExport.countriesHtml = $('#countries').html();
+          memberFilterExport.countries = $('#countries').val();
+        }
+
+        applyFilter();
+        updateComponents();
+    }
+
+
+    var statesByCountriesRes = function(result) {
+      result.filter = parseInt(result.filter);
+    
+      if(result.filter !== null && result.filter !== undefined && result.filter === 1) {
+        var statesId = '#states-attributes-table';
+        var html = "<option value=\"\" selected>Todos os estados</option>";
+      } else if(result.filter !== null && result.filter !== undefined && result.filter === 2) {
+        var statesId = '#states-graphics';
+        var html = "<option value=\"\" selected>Todos os estados</option>";
+      } else if(result.filter !== null && result.filter !== undefined && result.filter === 3) {
+        var statesId = '#states-export';
+        var html = "<option value=\"\" selected>Todos os estados</option>";
+      } else {
+        var statesId = '#states';
+        var html = "<option value=\"\" selected>Todos os estados</option><option value=\"0\" selected>Todos municípios</option>";
+      }
+
+      var initialValue = $(statesId).val();
+
+      var statesCount = result.states.rowCount;
+
+      for(var i = 0; i < statesCount; i++) {
+        html += "<option value='" + result.states.rows[i].id + "'>" + result.states.rows[i].name + "</option>";
+      }
+
+      if(result.specialRegions !== undefined && result.specialRegions !== null) {
+        var specialRegionsCount = result.specialRegions.rowCount;
+
+        for(var i = 0; i < specialRegionsCount; i++) {
+          html += "<option value='" + result.specialRegions.rows[i].id + "' data-special-region='true' data-special-region-countries='" + result.specialRegions.rows[i].countries + "'>" + result.specialRegions.rows[i].name + "</option>";
+        }
+      }
+
+      $(statesId).empty().html(html);
+
+      if($(statesId).attr('data-value') === undefined || $(statesId).attr('data-value') === "") {
+        $(statesId).val(initialValue);
+      } else {
+        var states = $(statesId).attr('data-value').split(',');
+        $(statesId).val(states);
+      }
+
+      if(statesId == '#states' && memberFilterExport !== null) {
+        memberFilterExport.statesHtml = $(statesId).html().replace('<option value="0" selected="">Todos municípios</option>', '');
+        memberFilterExport.states = $(statesId).val();
+      }
+
+      if(result.filter !== null && result.filter !== undefined && result.filter === 1) {
+        $('#states-attributes-table').removeAttr('disabled');
+        //$('#filter-button-attributes-table').click();
+      } else if(result.filter !== null && result.filter !== undefined && result.filter === 2) {
+        $('#states-graphics').removeAttr('disabled');
+        //$('#filter-button-graphics').click();
+      } else if(result.filter !== null && result.filter !== undefined && result.filter === 3) {
+        $('#states-export').removeAttr('disabled');
+      }
+    }
 
     /**
      * Selects a list of countries in the countries dropdown and fills the states dropdown.
