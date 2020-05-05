@@ -510,7 +510,7 @@ define(
           else
             $('#filter-error-main').text('');
 
-          var countriesField = $('#countries').val();
+          var countriesField = [$('#countries').val()];
           var cityField = $('#city').data('value');
 
           var filterStates = getStatesFromFilter();
