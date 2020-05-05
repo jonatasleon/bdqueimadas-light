@@ -2,11 +2,11 @@ FROM ubuntu:16.04
 
 # Information
 LABEL maintainer="Queimadas <queimadas@inpe.br>" \
-      version="1.1.0"
+      version="1.1.1"
 
 # Environment Variables
 ENV BDQLIGHT_INSTALL_PATH=/opt/bdqueimadas-light
-ENV BDQLIGHT_VERSION=v1.1.0
+ENV BDQLIGHT_VERSION=v1.1.1
 
 # Dependencies
 RUN apt-get update && \
