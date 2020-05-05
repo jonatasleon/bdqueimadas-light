@@ -528,7 +528,7 @@ define(
             $.ajax({
               url: Utils.getBaseUrl() + "city",
               type: "GET",
-              data: { key: 'City', id: cityField },
+              data: { key: 'City', id: cityField, states: $("#states").val(), countries: $("#countries").val() },
               success: function(result) {
                 processData(result);
               }
@@ -554,7 +554,7 @@ define(
               $.ajax({
                 url: Utils.getBaseUrl() + "states",
                 type: "GET",
-                data: { ids: filterStates.toString(), key: 'States', filterForm: true},
+                data: { ids: filterStates.toString(), countries: $("#countries").val(), key: 'States', filterForm: true},
                 success: function(result) {
                   processData(result);
                 }

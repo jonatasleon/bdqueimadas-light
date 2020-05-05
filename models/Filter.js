@@ -238,7 +238,7 @@ var Filter = function() {
    * @memberof Filter
    * @inner
    */
-  this.getStatesExtent = function(states, callback) {
+  this.getStatesExtent = function(states, countries, callback) {
     if(states.length === 1 && memberFilterConfig.Extents.States[states[0]] !== undefined) {
       var confExtent = memberFilterConfig.Extents.States[states[0]].split(',');
       return callback(null, { rowCount: 1, rows: [{ extent: "BOX(" + confExtent[0] + " " + confExtent[1] + "," + confExtent[2] + " " + confExtent[3] + ")" }] });
@@ -278,7 +278,10 @@ var Filter = function() {
           else
             query += memberTablesConfig.States.GeometryFieldName;
 
-          query += "), 0.5) as extent from " + memberTablesConfig.States.Schema + "." + memberTablesConfig.States.TableName + " where " + memberTablesConfig.States.IdFieldName + " in (";
+          query += "), 0.5) as extent from " + memberTablesConfig.States.Schema + "." + memberTablesConfig.States.TableName + " where " 
+          + memberTablesConfig.States.CountryIdFieldName + " in (" + countries + ")"; 
+          
+          query += " and " + memberTablesConfig.States.IdFieldName + " in (";
 
           for(var i = 0, statesWithoutExtentLength = statesWithoutExtent.length; i < statesWithoutExtentLength; i++) {
             query += "$" + (parameter++) + ",";
@@ -347,7 +350,7 @@ var Filter = function() {
    * @memberof Filter
    * @inner
    */
-  this.getCityExtent = function(id, callback) {
+  this.getCityExtent = function(id, states, countries, callback) {
     if(memberFilterConfig.Extents.Cities[id] !== undefined) {
       var confExtent = memberFilterConfig.Extents.Cities[id].split(',');
       return callback(null, { rowCount: 1, rows: [{ extent: "BOX(" + confExtent[0] + " " + confExtent[1] + "," + confExtent[2] + " " + confExtent[3] + ")" }] });
@@ -359,7 +362,15 @@ var Filter = function() {
     memberPgPool.connect(function(err, client, done) {
       if(!err) {
         // Creation of the query
-        var query = "select ST_Expand(ST_Extent(" + memberTablesConfig.Cities.GeometryFieldName + "), 0.1) as extent from " + memberTablesConfig.Cities.Schema + "." + memberTablesConfig.Cities.TableName + " where " + memberTablesConfig.Cities.IdFieldName + " = $1;";
+        var query = "select ST_Expand(ST_Extent(" + memberTablesConfig.Cities.GeometryFieldName + "), 0.1) as extent from " + memberTablesConfig.Cities.Schema + "." + memberTablesConfig.Cities.TableName + " where " 
+        + "id_0 in (" + countries +") and id_1 in ("; 
+        
+        for(var i = 0; i < states.length; i++) {
+            query += states + ",";
+        }
+
+        query = query.substring(0, query.length - 1) + ")";
+        query += " and " + memberTablesConfig.Cities.IdFieldName + " = $1;";
 
         // Execution of the query
         client.query(query, parameters, function(err, result) {

@@ -21,7 +21,7 @@ var StatesController = function(app) {
         }
         
         var functionName = "get" + params.key + "Extent";
-        memberFilter[functionName](params.ids, function(err, extent) {
+        memberFilter[functionName](params.ids, params.countries, function(err, extent) {
             if(err) return console.error(err);
             res.json({ key: params.key, ids: params.ids, extent: extent});
         });

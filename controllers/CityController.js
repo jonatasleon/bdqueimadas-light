@@ -16,7 +16,7 @@ var CityController = function(app) {
     var getCityExtent = function(req, res) {
         var params = memberUtils.parseToBool(req.query);
 
-        memberFilter.getCityExtent(params.id, function(err, extent) {
+        memberFilter.getCityExtent(params.id, params.states, params.countries, function(err, extent) {
             if(err) return console.error(err);
             res.json({ key: params.key, id: params.id, extent: extent });
         });

@@ -1050,7 +1050,7 @@ define(
       $.ajax({
         url: Utils.getBaseUrl() + "states",
         type: "GET",
-        data: { ids: ids.toString(), specialRegions: [], specialRegionsCountries: [], key: 'States', filterForm: false },
+        data: { ids: ids.toString(), countries: $("#countries").val(), key: 'States', filterForm: false },
         success: function(result) {
           processData(result);
         }
