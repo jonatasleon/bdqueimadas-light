@@ -1,0 +1,9 @@
+{
+  "Port": 5432,
+  "Host": "127.0.0.1",
+  "Database": "terrama2q",
+  "User": "terrama2q",
+  "Password": "terrama2q",
+  "MaxNumberOfClientsInThePool": 30,
+  "IdleTimeoutMillis": 30000
+}

@@ -1,0 +1,56 @@
+{
+  "Countries": {
+    "Schema": "public",
+    "TableName": "s_paises",
+    "IdFieldName": "id_0",
+    "NameFieldName": "name_0",
+    "BdqNameFieldName": "name_0",
+    "GeometryFieldName": "geom"
+  },
+  "States": {
+    "Schema": "public",
+    "TableName": "s_estados",
+    "IdFieldName": "id_1",
+    "CountryIdFieldName": "id_0",
+    "NameFieldName": "name_1",
+    "BdqNameFieldName": "name_1",
+    "GeometryFieldName": "geom"
+  },
+  "Cities": {
+    "Schema": "public",
+    "TableName": "s_municipios",
+    "IdFieldName": "id_2",
+    "NameFieldName": "name_2",
+    "BdqNameFieldName": "name_2",
+    "StateIdFieldName": "id_1",
+    "GeometryFieldName": "geom"
+  },
+  "Biomes": {
+    "Schema": "public",
+    "TableName": "s_biomas",
+    "IdFieldName": "id",
+    "NameFieldName": "name",
+    "GeometryFieldName": "geom"
+  },
+  "Fires": {
+    "Schema": "public",
+    "TableName": "d_focos",
+    "IdFieldName": "focos",
+    "DateTimeFieldName": "data_hora_gmt",
+    "SatelliteFieldName": "satelite",
+    "CountryFieldName": "id_0",
+    "StateFieldName": "id_1",
+    "CityFieldName": "id_2",
+    "BiomeIdFieldName": "bioma_id",
+    "BiomeFieldName": "bioma",
+    "GeometryFieldName": "geometria",
+    "DateFormat": "YYYY-MM-DD"
+  },
+  "UCF": {
+    "NameFieldName": "nome",
+    "Schema": "public",
+    "TableName": "s_ucfs",
+    "IdFieldName": "gid",
+    "GeometryFieldName": "geom"
+  }
+}
