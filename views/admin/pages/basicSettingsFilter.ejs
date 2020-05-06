@@ -1,0 +1,93 @@
+<div class="box box-default color-palette-box">
+  <form method="post" action="<%- BASE_URL %>admin/update-basic-settings-filter">
+    <input type="hidden" name="_csrf" id="_csrf" value="<%- csrfToken %>">
+    <div class="box-body">
+      <div class="row">
+        <div class="col-md-12">
+          <h4 class="text-center">Filter.json</h1>
+            <h4>LayerToFilter (Focos)</h4>
+            <div class='row'>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label><%- Object.keys(filterConfigurations.LayerToFilter)[0] %></label>
+                    <input type="text" id="LayerToFilterLayerId" name="LayerToFilterLayerId" class="form-control" value="<%- filterConfigurations.LayerToFilter.LayerId %>">
+                  </div>
+            </div>
+            </div>
+            <h4>CountriesLayers</h4>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label><%- Object.keys(filterConfigurations.CountriesLayer)[0] %></label>
+                  <input type="text" id="CountriesLayerId" name="CountriesLayerId" class="form-control" value="<%- filterConfigurations.CountriesLayer.Id %>">
+                </div>
+              </div>
+            </div>
+            <h4>StatesLayers</h4>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label><%- Object.keys(filterConfigurations.StatesLayer)[0] %></label>
+                  <input type="text" id="StatesLayerId" name="StatesLayerId" class="form-control" value="<%- filterConfigurations.StatesLayer.Id %>">
+                </div>
+              </div>
+            </div>
+            <h4>CitiesLayers</h4>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label><%- Object.keys(filterConfigurations.CitiesLayer)[0] %></label>
+                  <input type="text" id="CitiesLayerId" name="CitiesLayerId" class="form-control" value="<%- filterConfigurations.CitiesLayer.Id %>"></div>
+              </div>
+            </div>
+            <h4>ProtectedAreas (UCFS)</h4>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label><%- Object.keys(filterConfigurations.ProtectedAreas.UCF)[0] %></label>
+                  <input type="text" id="ProtectedAreasLayerName" name="ProtectedAreasLayerName" class="form-control" value="<%- filterConfigurations.ProtectedAreas.UCF.LayerName %>">
+                </div>
+              </div>
+            </div>
+            
+          <!-- Este trecho é util caso precisemos construir o template para edição de todo o JSON no futuro
+               TODO remover se não for mais o caso
+            <%
+              var content = "";
+              Object.keys(filterConfigurations).forEach(function(key, index) {
+                var obj = filterConfigurations[key];
+
+                if(key !== 'Satellites' && key !== 'SpatialFilter' && key !== 'Extents') {
+                  content += "<h4>" + key + "</h4><div class='row'>";
+                  Object.keys(obj).forEach(function(keyObj, index) {
+                    var objChild = obj[keyObj];
+
+                    if(key !== 'ProtectedAreas' && key !== 'SpatialFilter' && key !== 'Extents') {
+                      content += "<div class='col-md-4'><div class='form-group'>";
+                      content += "<label>" + keyObj + "</label>";
+                      content += "<input type='text' id=\'" + (key + keyObj) + "\' name=\'" + (key + keyObj) + "\' class='form-control' value=\'" + objChild + "\'>";
+                      content += "</div></div>";
+                    }
+                    else if (key === 'ProtectedAreas') {
+                      Object.keys(objChild).forEach(function(keyObjChild, index) {
+                        content += "<div class='col-md-4'><div class='form-group'>";
+                        content += "<label>" + keyObjChild + "</label>";
+                        content += "<input type='text' id=\'" + (key + keyObjChild) + "\' name=\'" + (key + keyObjChild) + "\' class='form-control' value=\'" + objChild[keyObjChild] + "\'>";
+                        content += "</div></div>";
+                      });
+                    }
+                  });
+      
+                  content += "</div>";
+              }
+              });
+          %>
+          <%- content %>-->
+        </div>
+      </div>
+    </div>
+    <div class="box-footer">
+      <button type="submit" class="btn btn-info pull-right" id="save-basic-settings">Salvar</button>
+    </div>
+  </form>
+</div>

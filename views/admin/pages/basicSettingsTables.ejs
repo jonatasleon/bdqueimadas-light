@@ -1,0 +1,34 @@
+<div class="box box-default color-palette-box">
+  <form method="post" action="<%- BASE_URL %>admin/update-basic-settings-tables">
+    <input type="hidden" name="_csrf" id="_csrf" value="<%- csrfToken %>">
+    <div class="box-body">
+      <div class="row">
+        <div class="col-md-12">
+          <h4 class="text-center">Tables.json</h1>
+          <%
+              var content = "";
+              
+              Object.keys(tablesConfigurations).forEach(function(key, index) {
+                var obj = tablesConfigurations[key];
+                content += "<h4>" + key + "</h4><div class='row'>";
+
+                Object.keys(obj).forEach(function(keyObj, index) {
+                  content += "<div class='col-md-4'><div class='form-group'>";
+                  content += "<label>" + keyObj + "</label>";
+                  content += "<input type='text' id=\'" + (key + keyObj) + "\' name=\'" + (key + keyObj) + "\' class='form-control' value=\'" + obj[keyObj] + "\'>";
+                  content += "</div></div>";
+                });
+
+                content += "</div>";
+              });
+          %>
+
+          <%- content %>
+        </div>
+      </div>
+    </div>
+    <div class="box-footer">
+      <button type="submit" class="btn btn-info pull-right" id="save-basic-settings">Salvar</button>
+    </div>
+  </form>
+</div>

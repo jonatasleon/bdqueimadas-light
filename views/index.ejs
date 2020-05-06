@@ -9,6 +9,7 @@
     <title><%= __('BDQueimadas Light') %></title>
   </head>
   <body class="skin-queimadas sidebar-mini wysihtml5-supported sidebar-collapse">
+    <input type="hidden" name="_csrf" id="_csrf" value="<%- csrfToken %>">
     <div class="wrapper">
       <% include templates/header %>
       <% include templates/leftbar %>

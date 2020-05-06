@@ -11,7 +11,8 @@ var express = require('express'),
     cookieParser = require('cookie-parser'),
     session = require('express-session'),
     i18n = require( "i18n" ),
-    compression = require('compression');
+    compression = require('compression'),
+    http = require('http');
 
 var applicationConfigurations = JSON.parse(fs.readFileSync(path.join(__dirname, './configurations/Application.json'), 'utf8'));
 
@@ -40,9 +41,12 @@ app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(methodOverride('_method'));
 app.use(BASE_URL, express.static(path.join(__dirname, 'public')));
+app.use(require('csurf')({ cookie: true }));
 app.use(require('connect-flash')());
 
 app.use(function(req, res, next) {
+  res.locals.csrfToken = req.csrfToken();
+
   var match = req.url.match(/^\/([A-Z]{2})([\/\?].*)?$/i);
   if(match) {
     req.lang = match[1];

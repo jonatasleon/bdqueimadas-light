@@ -1,0 +1,90 @@
+<div class="box box-default color-palette-box">
+  <form method="post" action="<%- BASE_URL %>admin/update-basic-settings-map">
+    <input type="hidden" name="_csrf" id="_csrf" value="<%- csrfToken %>">
+    <div class="box-body">
+      <div class="row">
+        <div class="col-md-12">
+          <h4 class="text-center">Map.json</h1>
+            <h4><%- mapConfigurations.Layers[0].Name %></h4>
+            <div class='row'>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label>Id</label>
+                    <input type="text" id="FocosLayerId" name="FocosLayerId" class="form-control" value="<%- mapConfigurations.Layers[0].Id %>">
+                  </div>
+            </div>
+            </div>
+            <h4><%- mapConfigurations.Layers[1].Name %></h4>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>Id</label>
+                  <input type="text" id="CountriesLayerId" name="CountriesLayerId" class="form-control" value="<%- mapConfigurations.Layers[1].Id %>">
+                </div>
+              </div>
+            </div>
+            <h4><%- mapConfigurations.Layers[2].Name %></h4>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>Id</label>
+                  <input type="text" id="StatesLayerId" name="StatesLayerId" class="form-control" value="<%- mapConfigurations.Layers[2].Id %>">
+                </div>
+              </div>
+            </div>
+            <h4><%- mapConfigurations.Layers[3].Name %></h4>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>Id</label>
+                  <input type="text" id="CitiesLayerId" name="CitiesLayerId" class="form-control" value="<%- mapConfigurations.Layers[3].Id %>">
+                </div>
+              </div>
+            </div>
+            <h4><%- mapConfigurations.Layers[4].Name %></h4>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>Id</label>
+                  <input type="text" id="BiomesLayerId" name="BiomesLayerId" class="form-control" value="<%- mapConfigurations.Layers[4].Id %>"> 
+                </div>
+              </div>
+            </div>
+            <h4><%- mapConfigurations.Layers[5].Name %></h4>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>Id</label>
+                  <input type="text" id="UcfsLayerId" name="UcfsLayerId" class="form-control" value="<%- mapConfigurations.Layers[5].Id %>"> 
+                </div>
+              </div>
+            </div>
+          
+          
+          <!--<%
+              var content = "";
+              
+              Object.keys(mapConfigurations).forEach(function(key, index) {
+                var obj = mapConfigurations[key];
+                content += "<h4>" + key + "</h4><div class='row'>";
+
+                Object.keys(obj).forEach(function(keyObj, index) {
+                  content += "<div class='col-md-4'><div class='form-group'>";
+                  content += "<label>" + keyObj + "</label>";
+                  content += "<input type='text' id=\'" + (key + keyObj) + "\' name=\'" + (key + keyObj) + "\' class='form-control' value=\'" + obj[keyObj] + "\'>";
+                  content += "</div></div>";
+                });
+
+                content += "</div>";
+              });
+          %>
+
+          <%- content %>-->
+        </div>
+      </div>
+    </div>
+    <div class="box-footer">
+      <button type="submit" class="btn btn-info pull-right" id="save-basic-settings">Salvar</button>
+    </div>
+  </form>
+</div>
