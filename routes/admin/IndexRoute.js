@@ -8,7 +8,7 @@
  * @author Marcos Vinicius [marcos.araujo@inpe.br]
  */
 var IndexRoute = function(app) {
-  app.get('/admin', function(request, response) {
+  app.get(BASE_URL + 'admin', function(request, response) {
     response.redirect(BASE_URL + 'admin/basic-settings-filter');
   });
 };

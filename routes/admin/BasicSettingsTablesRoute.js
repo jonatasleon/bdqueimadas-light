@@ -9,8 +9,8 @@
 var BasicSettingsTablesRoute = function(app) {
   var controller = app.controllers.admin.BasicSettingsTablesController;
 
-  app.get('/admin/basic-settings-tables', controller.basicSettingsTablesController);
-  app.post('/admin/update-basic-settings-tables', controller.updateBasicTablesSettings);
+  app.get(BASE_URL + 'admin/basic-settings-tables', controller.basicSettingsTablesController);
+  app.post(BASE_URL + 'admin/update-basic-settings-tables', controller.updateBasicTablesSettings);
 };
 
 module.exports = BasicSettingsTablesRoute;

@@ -9,8 +9,8 @@
 var BasicSettingsFilterRoute = function(app) {
   var controller = app.controllers.admin.BasicSettingsFilterController;
 
-  app.get('/admin/basic-settings-filter', controller.basicSettingsFilterController);
-  app.post('/admin/update-basic-settings-filter', controller.updateBasicFilterSettings);
+  app.get(BASE_URL + 'admin/basic-settings-filter', controller.basicSettingsFilterController);
+  app.post(BASE_URL + 'admin/update-basic-settings-filter', controller.updateBasicFilterSettings);
 };
 
 module.exports = BasicSettingsFilterRoute;
