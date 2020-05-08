@@ -26,29 +26,37 @@ var GraphicsFiresCountController = function(app) {
         if(json.limit !== null && json.limit !== '') options.limit = json.limit;
         if(json.y !== null) options.y = json.y;
 
-        memberGraphics.getFiresTotalCount(json.dateTimeFrom, json.dateTimeTo, json.filterRules, options, function(err, firesTotalCount) {
-        if(err) return console.error(err);
-
         if(json.key === "week") {
             memberGraphics.getFiresCountByWeek(json.dateTimeFrom, json.dateTimeTo, json.filterRules, options, function(err, firesCount) {
-            if(err) return console.error(err);
+                if(err) return console.error(err);
 
-            res.json({ firesCount: firesCount, firesTotalCount: firesTotalCount, id: json.id, y: json.y, key: json.key, title: json.title, limit: json.limit, filterRules: json.filterRules });
+                var firesTotalCount = {};
+                var reduced = firesCount.rows.reduce(function(total, current) { return parseInt(total) + parseInt(current.count) }, 0);
+                firesTotalCount.rows = [{"count": reduced.toString()}];
+
+                res.json({ firesCount: firesCount, firesTotalCount: firesTotalCount, id: json.id, y: json.y, key: json.key, title: json.title, limit: json.limit, filterRules: json.filterRules });
             });
         } else if(json.key === "UCE" || json.key === "UCF" || json.key === "TI" || json.key === "UCE_5KM" || json.key === "UCF_5KM" || json.key === "TI_5KM" || json.key === "UCE_10KM" || json.key === "UCF_10KM" || json.key === "TI_10KM") {
             memberGraphics.getFiresCountByPA(json.dateTimeFrom, json.dateTimeTo, json.key, json.filterRules, options, function(err, firesCount) {
-            if(err) return console.error(err);
+                if(err) return console.error(err);
 
-            res.json({ firesCount: firesCount, firesTotalCount: firesTotalCount, id: json.id, y: json.y, key: json.key, title: json.title, limit: json.limit, filterRules: json.filterRules });
+                var firesTotalCount = {};
+                var reduced = firesCount.rows.reduce(function(total, current) { return parseInt(total) + parseInt(current.count) }, 0);
+                firesTotalCount.rows = [{"count": reduced.toString()}];
+
+                res.json({ firesCount: firesCount, firesTotalCount: firesTotalCount, id: json.id, y: json.y, key: json.key, title: json.title, limit: json.limit, filterRules: json.filterRules });
             });
         } else {
             memberGraphics.getFiresCount(json.dateTimeFrom, json.dateTimeTo, json.key, json.filterRules, options, function(err, firesCount) {
-            if(err) return console.error(err);
+                if(err) return console.error(err);
 
-            res.json({ firesCount: firesCount, firesTotalCount: firesTotalCount, id: json.id, y: json.y, key: json.key, title: json.title, limit: json.limit, filterRules: json.filterRules });
+                var firesTotalCount = {};
+                var reduced = firesCount.rows.reduce(function(total, current) { return parseInt(total) + parseInt(current.count) }, 0);
+                firesTotalCount.rows = [{"count": reduced.toString()}];
+
+                res.json({ firesCount: firesCount, firesTotalCount: firesTotalCount, id: json.id, y: json.y, key: json.key, title: json.title, limit: json.limit, filterRules: json.filterRules });
             });
         }
-        });
     }
 
     return getFiresCount;
